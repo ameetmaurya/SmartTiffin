@@ -13,11 +13,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByEmail(String email);
 
-    // ── OPTIMIZED QUERIES FOR ADMIN DASHBOARD ──
-    
-    // ✅ FIXED: Changed 'String' to 'User.Role'
-    List<User> findByRole1(String role);
-    
+    // ── FIXED: Use User.Role enum everywhere ──
+
+    List<User> findByRole(User.Role role);
+
     long countByRole(User.Role role);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.verificationStatus = :status")
@@ -31,6 +30,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'STUDENT' AND u.createdAt >= :date")
     long countNewStudentsSince(@Param("date") LocalDateTime date);
-
-    List<User> findByRole(String role);
 }
