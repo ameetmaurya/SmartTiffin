@@ -60,6 +60,14 @@
 		</dependency>
 	</dependencies>
 
+	<!-- Testing -->                               ← ADD THIS BLOCK
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+
 	<build>
 		<plugins>
 			<plugin>
