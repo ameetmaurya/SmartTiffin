@@ -35,7 +35,8 @@ public class MLService {
         }
 
         // 2. Fetch all available Delivery Partners
-        List<User> drivers = userRepository.findByRole("DELIVERY_PARTNER");
+        // FIX: Changed "DELIVERY_PARTNER" String to User.Role.DELIVERY_PARTNER enum
+        List<User> drivers = userRepository.findByRole(User.Role.DELIVERY_PARTNER);
         if (drivers.isEmpty()) {
             throw new IllegalStateException("No Delivery Partners available in the system.");
         }
