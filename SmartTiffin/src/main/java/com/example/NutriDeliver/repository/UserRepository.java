@@ -16,7 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // ── OPTIMIZED QUERIES FOR ADMIN DASHBOARD ──
     
     // ✅ FIXED: Changed 'String' to 'User.Role'
-    List<User> findByRole(User.Role role);
+    List<User> findByRole1(String role);
     
     long countByRole(User.Role role);
 
@@ -31,4 +31,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'STUDENT' AND u.createdAt >= :date")
     long countNewStudentsSince(@Param("date") LocalDateTime date);
+
+    List<User> findByRole(String role);
 }
