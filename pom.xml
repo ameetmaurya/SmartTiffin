@@ -45,6 +45,14 @@
 			<version>8.0.33</version>
 		</dependency>
 
+<annotationProcessorPaths>
+    <path>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version></version>  <!-- THIS IS EMPTY - needs a version -->
+    </path>
+</annotationProcessorPaths>
+
 		<!-- Security -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
