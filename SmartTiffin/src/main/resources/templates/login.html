@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — NutriDeliver</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand:   #FF5722;
+      --brand2:  #FF7043;
+      --lime:    #C6F135;
+      --dark:    #0F0F0F;
+      --dark2:   #1A1A1A;
+      --dark3:   #242424;
+      --border:  rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text:    #F5F0EB;
+      --muted:   #888;
+      --faint:   #444;
+      --success: #4CAF50;
+      --r: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      overflow: hidden;
+    }
+
+    /* ── LEFT VISUAL HALF ── */
+    .left {
+      position: relative;
+      background: #0F0F0F;
+      overflow: hidden;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Gradient blob */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .blob-1 { width: 500px; height: 500px; background: rgba(255,87,34,0.18); top: -100px; left: -100px; }
+    .blob-2 { width: 300px; height: 300px; background: rgba(198,241,53,0.08); bottom: 50px; right: 50px; }
+
+    .left-logo {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-mark {
+      width: 40px; height: 40px;
+      background: var(--brand);
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 18px; color: #fff;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: 'Fraunces', serif;
+      font-size: 22px; font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    /* Big hero text */
+    .hero-text {
+      position: relative; z-index: 2;
+      margin-top: auto;
+      margin-bottom: 0;
+    }
+    .hero-text .eyebrow {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--brand);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 16px;
+    }
+    .hero-text .eyebrow::before {
+      content: ''; width: 24px; height: 2px; background: var(--brand);
+    }
+    .hero-text h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(40px, 4.5vw, 62px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+    }
+    .hero-text h1 .accent {
+      color: var(--brand);
+      display: inline-block;
+    }
+    .hero-text h1 .lime { color: var(--lime); }
+
+    .hero-text .tagline {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 360px;
+      margin-bottom: 36px;
+    }
+
+    /* Floating meal cards */
+    .meals-row {
+      display: flex;
+      gap: 12px;
+      position: relative; z-index: 2;
+    }
+    .meal-pill {
+      background: var(--dark2);
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      padding: 10px 18px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 600;
+      animation: floatX 5s ease-in-out infinite;
+    }
+    .meal-pill:nth-child(2) { animation-delay: 1s; }
+    .meal-pill:nth-child(3) { animation-delay: 2s; }
+    @keyframes floatX {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .pill-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .dot-veg { background: #4CAF50; }
+    .dot-non { background: var(--brand); }
+
+    /* Stats strip */
+    .stats-strip {
+      display: flex; gap: 32px;
+      margin-top: 28px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      position: relative; z-index: 2;
+    }
+    .stat-item { }
+    .stat-num {
+      font-family: 'Fraunces', serif;
+      font-size: 28px; font-weight: 900;
+      color: var(--text);
+      letter-spacing: -1px;
+    }
+    .stat-num span { color: var(--brand); }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── RIGHT FORM HALF ── */
+    .right {
+      background: var(--dark2);
+      border-left: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 56px;
+      position: relative;
+    }
+
+    /* Subtle top accent */
+    .right::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--brand), var(--brand2), var(--lime));
+    }
+
+    .form-box { width: 100%; max-width: 380px; }
+
+    .form-header { margin-bottom: 36px; }
+    .form-header .hi {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .form-header h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 34px; font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .form-header p { font-size: 14px; color: var(--muted); }
+
+    /* Alert */
+    .alert {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 12px;
+      font-size: 13px; font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .alert i { flex-shrink: 0; }
+    .alert-err { background: rgba(255,87,34,.1); color: #FF8A65; border: 1px solid rgba(255,87,34,.25); }
+    .alert-info { background: rgba(33,150,243,.1); color: #64B5F6; border: 1px solid rgba(33,150,243,.25); }
+    .alert-ok  { background: rgba(76,175,80,.1);  color: #81C784; border: 1px solid rgba(76,175,80,.25); }
+
+    /* Field */
+    .field { margin-bottom: 18px; }
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--faint); margin-bottom: 8px;
+    }
+    .field-wrap { position: relative; }
+    .field-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; color: var(--faint); pointer-events: none;
+    }
+    .field-input {
+      width: 100%;
+      background: var(--dark3);
+      border: 1.5px solid var(--border2);
+      border-radius: 12px;
+      padding: 13px 14px 13px 44px;
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field-input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(255,87,34,0.12);
+    }
+    .field-input::placeholder { color: var(--faint); }
+
+    .btn-main {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px; font-weight: 800;
+      background: var(--brand);
+      color: #fff;
+      border: none; cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 8px;
+      letter-spacing: 0.2px;
+    }
+    .btn-main:hover {
+      background: var(--brand2);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(255,87,34,0.35);
+    }
+    .btn-main .arrow { transition: transform .2s; }
+    .btn-main:hover .arrow { transform: translateX(4px); }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; color: var(--faint); font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .footer-note {
+      text-align: center; margin-top: 24px;
+      font-size: 13px; color: var(--muted);
+    }
+    .footer-note a { color: var(--brand); font-weight: 700; text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      body { grid-template-columns: 1fr; }
+      .left { display: none; }
+      .right { padding: 32px 24px; border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT -->
+<div class="left">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="left-logo">
+    <div class="logo-mark">🍱</div>
+    <span class="logo-text">NutriDeliver</span>
+  </div>
+
+  <div class="hero-text">
+    <div class="eyebrow">Campus Tiffin, Reinvented</div>
+    <h1>
+      Hot meals,<br>
+      <span class="accent">right at</span><br>
+      your door<span class="lime">.</span>
+    </h1>
+    <p class="tagline">Smart subscriptions, personalised plans, real-time tracking — all built for campus life.</p>
+
+    <div class="meals-row">
+      <div class="meal-pill"><span class="pill-dot dot-veg"></span> Dal Rice Thali</div>
+      <div class="meal-pill"><span class="pill-dot dot-non"></span> Chicken Curry</div>
+      <div class="meal-pill"><span class="pill-dot dot-veg"></span> Poha & Chai</div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-item">
+        <div class="stat-num">2.4<span>k</span></div>
+        <div class="stat-label">Active Students</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">98<span>%</span></div>
+        <div class="stat-label">On-time Rate</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">12<span>+</span></div>
+        <div class="stat-label">Meal Options</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="form-box">
+    <div class="form-header">
+      <div class="hi">Welcome back 👋</div>
+      <h2>Sign in to<br>NutriDeliver</h2>
+      <p>Your next meal is just a tap away</p>
+    </div>
+
+    <!-- Alerts (Thymeleaf) -->
+    <div th:if="${param.error}" class="alert alert-err">
+      <i class="fas fa-exclamation-circle"></i> Invalid email or password.
+    </div>
+    <div th:if="${param.logout}" class="alert alert-info">
+      <i class="fas fa-door-open"></i> You've been signed out.
+    </div>
+    <div th:if="${param.registered}" class="alert alert-ok">
+      <i class="fas fa-party-horn"></i> Account created! Please sign in.
+    </div>
+
+    <form th:action="@{/login}" method="post">
+      <div class="field">
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <i class="fas fa-envelope field-icon"></i>
+          <input type="email" name="username" class="field-input"
+                 placeholder="you@university.edu" required autocomplete="email">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <i class="fas fa-lock field-icon"></i>
+          <input type="password" name="password" class="field-input"
+                 placeholder="••••••••" required autocomplete="current-password">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-main">
+        Sign In <i class="fas fa-arrow-right arrow"></i>
+      </button>
+    </form>
+
+    <div class="footer-note">
+      New here? <a href="/register">Create a free account →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

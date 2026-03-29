@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Display | SmartTiffin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand: #FF5200;
+      --brand-2: #FF6B35;
+      --brand-soft: rgba(255,82,0,0.10);
+      --brand-mid: rgba(255,82,0,0.18);
+      --bg: #0F0F0F;
+      --bg2: #161616;
+      --surface: #1E1E1E;
+      --surface2: #262626;
+      --surface3: #2E2E2E;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --green: #48BB78;
+      --green-soft: rgba(72,187,120,0.12);
+      --amber: #F6C90E;
+      --amber-soft: rgba(246,201,14,0.12);
+      --red: #FC4C4E;
+      --red-soft: rgba(252,76,78,0.12);
+      --blue: #60A5FA;
+      --blue-soft: rgba(96,165,250,0.12);
+      --text: #F5F5F5;
+      --text-2: #AAAAAA;
+      --text-3: #666666;
+      --r: 14px;
+      --r-xl: 22px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(15,15,15,0.92);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.4px;
+    }
+    .brand-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      box-shadow: 0 4px 14px rgba(255,82,0,0.4);
+    }
+    .brand-dot { color: var(--brand); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .chef-pill {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 50px;
+      padding: 5px 14px 5px 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .chef-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #ff8c00);
+      display: grid; place-items: center;
+      font-size: 12px;
+      color: #fff;
+    }
+    .on-duty-indicator {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid rgba(72,187,120,0.25);
+      border-radius: 50px;
+      padding: 5px 14px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(72,187,120,0.5); }
+      50% { box-shadow: 0 0 0 5px rgba(72,187,120,0); }
+    }
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border2);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all .2s;
+    }
+    .btn-logout:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: calc(100vh - 62px); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 236px;
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 22px 12px 24px;
+      gap: 2px;
+      position: sticky;
+      top: 62px;
+      height: calc(100vh - 62px);
+      overflow-y: auto;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 10px 12px 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: all .18s;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface); color: var(--text); }
+    .nav-item.active {
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-weight: 700;
+    }
+    .nav-item.active .nav-icon { color: var(--brand); }
+    .nav-icon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: grid; place-items: center;
+      font-size: 14px;
+      background: var(--surface2);
+      color: var(--text-3);
+      transition: all .18s;
+      flex-shrink: 0;
+    }
+    .nav-item.active .nav-icon { background: var(--brand-mid); }
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--brand);
+      color: #fff;
+    }
+    .lock-badge {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--amber);
+      background: var(--amber-soft);
+      padding: 2px 7px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .station-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .station-card .s-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .station-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .station-badge.veg { background: var(--green-soft); color: var(--green); border: 1px solid rgba(72,187,120,.25); }
+    .station-badge.nonveg { background: var(--red-soft); color: var(--red); border: 1px solid rgba(252,76,78,.25); }
+
+    /* ── MAIN ── */
+    .main { flex: 1; padding: 32px; overflow-y: auto; max-width: 100%; }
+
+    /* ── ALERTS ── */
+    .alert-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 26px;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .alert-success { background: var(--green-soft); color: var(--green); border: 1px solid rgba(72,187,120,.3); }
+    .alert-warning { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(246,201,14,.3); }
+    .alert-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(252,76,78,.3); }
+
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: -0.6px;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .page-header p { color: var(--text-2); font-size: 14px; margin-top: 5px; }
+
+    /* ── STATS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, border-color .2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+    .stat-card .accent-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
+      border-radius: 20px 20px 0 0;
+    }
+    .stat-card .icon-wrap {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+    .stat-card .s-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
+    }
+    .stat-card .s-value {
+      font-family: 'Nunito', sans-serif;
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1;
+    }
+    .stat-card .s-sub { font-size: 12px; color: var(--text-2); margin-top: 7px; }
+    .stat-brand .accent-bar { background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
+    .stat-brand .icon-wrap { background: var(--brand-soft); color: var(--brand); }
+    .stat-brand .s-value { color: var(--brand); }
+    .stat-green .accent-bar { background: linear-gradient(90deg, #48BB78, #68D391); }
+    .stat-green .icon-wrap { background: var(--green-soft); color: var(--green); }
+    .stat-green .s-value { color: var(--green); }
+    .stat-amber .accent-bar { background: linear-gradient(90deg, #F6C90E, #FFD900); }
+    .stat-amber .icon-wrap { background: var(--amber-soft); color: var(--amber); }
+    .stat-amber .s-value { color: var(--amber); }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 26px;
+    }
+    .section-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .section-title .t-icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    /* ── SCHEDULE ── */
+    .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .hub-radio-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 8px;
+    }
+    .hub-radio-label:hover { border-color: rgba(255,82,0,0.4); background: var(--brand-soft); }
+    .hub-radio-label input[type=radio] { margin-top: 4px; accent-color: var(--brand); flex-shrink: 0; }
+    .hub-radio-label.selected { border-color: var(--brand); background: var(--brand-soft); }
+    .hub-name-r { font-weight: 700; font-size: 14px; color: var(--text); }
+    .hub-addr-r { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+    .hub-chips { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .hchip { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
+    .hchip-area { background: var(--brand-soft); color: var(--brand); }
+    .hchip-cap { background: var(--blue-soft); color: var(--blue); }
+    .no-hubs-warn {
+      background: var(--amber-soft);
+      border: 1px solid rgba(246,201,14,.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--amber);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .slot-section-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin: 16px 0 10px;
+    }
+    .hub-required-notice {
+      background: var(--amber-soft);
+      border: 1px solid rgba(246,201,14,.2);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--amber);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .slot-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 14px;
+      padding: 15px 18px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: left;
+      transition: all .2s;
+      margin-bottom: 8px;
+    }
+    .slot-btn:hover:not(:disabled) { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+    .slot-btn:disabled { opacity: .38; cursor: not-allowed; }
+    .slot-icon {
+      width: 40px; height: 40px;
+      border-radius: 11px;
+      display: grid; place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .slot-icon-b { background: rgba(246,201,14,.15); color: var(--amber); }
+    .slot-icon-l { background: rgba(96,165,250,.15); color: var(--blue); }
+    .slot-icon-d { background: rgba(167,139,250,.15); color: #a78bfa; }
+    .slot-meta { flex: 1; }
+    .slot-meta .slot-name { font-weight: 700; font-size: 14px; }
+    .slot-meta .slot-time { font-size: 12px; color: var(--text-2); font-weight: 400; margin-top: 2px; }
+    .booked-chip {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-weight: 800;
+      border: 1px solid rgba(72,187,120,.25);
+      flex-shrink: 0;
+    }
+
+    /* ── CHECK-IN CARD ── */
+    .checkin-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 26px;
+    }
+    .on-duty-banner {
+      text-align: center;
+      padding: 32px 20px;
+      background: var(--green-soft);
+      border: 1px solid rgba(72,187,120,.25);
+      border-radius: 16px;
+      animation: glowPulse 3s infinite;
+    }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 0 rgba(72,187,120,0); }
+      50% { box-shadow: 0 0 30px rgba(72,187,120,.12); }
+    }
+    .on-duty-banner .big-icon {
+      font-size: 40px;
+      color: var(--green);
+      margin-bottom: 10px;
+      display: block;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .on-duty-banner h5 {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--green);
+    }
+    .on-duty-banner p { font-size: 13px; color: rgba(72,187,120,.8); margin: 5px 0 18px; }
+
+    /* ── WAITING CHECK-IN & OTP ── */
+    .waiting-checkin { text-align: center; padding: 10px 4px; }
+    .waiting-icon-wrap {
+      width: 68px; height: 68px;
+      border-radius: 20px;
+      background: var(--blue-soft);
+      border: 1px solid rgba(96,165,250,.2);
+      display: grid; place-items: center;
+      margin: 0 auto 16px;
+      font-size: 28px;
+      color: var(--blue);
+      animation: floatIcon 3s ease-in-out infinite;
+    }
+    @keyframes floatIcon {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .waiting-title {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 17px;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .waiting-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.7;
+      margin-bottom: 22px;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .otp-input {
+      flex: 1;
+      background: var(--bg);
+      border: 2px solid var(--border2);
+      border-radius: 14px;
+      padding: 13px 18px;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 10px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .otp-input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(255,82,0,.15);
+    }
+    .otp-input::placeholder {
+      font-size: 14px;
+      letter-spacing: 0;
+      color: var(--text-3);
+      font-weight: 400;
+      font-family: 'Outfit', sans-serif;
+    }
+    .btn-otp-submit {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff;
+      border: none;
+      padding: 0 20px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all .2s;
+      box-shadow: 0 4px 14px rgba(255,82,0,.3);
+    }
+    .btn-otp-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,82,0,.45); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(255,82,0,.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,82,0,.45); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--border2);
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(252,76,78,.3);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 9px;
+    }
+    .btn-danger-outline:hover { background: var(--red-soft); }
+    .btn-pack {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all .22s;
+      margin-top: 4px;
+    }
+    .btn-pack-veg {
+      background: linear-gradient(135deg, #48BB78, #38A169);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(72,187,120,.3);
+    }
+    .btn-pack-veg:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(72,187,120,.4); }
+    .btn-pack-nonveg {
+      background: linear-gradient(135deg, var(--brand), #d44200);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(255,82,0,.3);
+    }
+    .btn-pack-nonveg:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(255,82,0,.4); }
+
+    /* ── DATA TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 0 0 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .data-table td {
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table th:last-child, .data-table td:last-child { text-align: right; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .chip-checked { background: var(--green-soft); color: var(--green); }
+    .chip-pending { background: var(--amber-soft); color: var(--amber); }
+    .chip-slot { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border2); }
+    .chip-info { background: var(--blue-soft); color: var(--blue); font-size: 13px; font-weight: 800; letter-spacing: 2px; }
+    .empty-row { text-align: center; padding: 40px; color: var(--text-3); }
+    .empty-row i { font-size: 28px; margin-bottom: 8px; display: block; }
+
+    /* ── PREP LIST ── */
+    .prep-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 26px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--red-soft);
+      color: var(--red);
+      border: 1px solid rgba(252,76,78,.3);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+    .prep-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 16px;
+    }
+    .prep-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+    .prep-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border2);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    }
+    .prep-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      right: 0; height: 4px;
+    }
+    .prep-card-veg::before { background: linear-gradient(90deg, #48BB78, #68D391); }
+    .prep-card-nonveg::before { background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
+    .order-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .order-tag-veg { background: var(--green-soft); color: var(--green); padding: 2px 8px; border-radius: 6px; font-size: 10px; }
+    .order-tag-nonveg { background: var(--brand-soft); color: var(--brand); padding: 2px 8px; border-radius: 6px; font-size: 10px; }
+    .order-items {
+      font-family: 'Nunito', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 5px;
+      line-height: 1.2;
+    }
+    .order-time {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .order-qty {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-2);
+      margin-bottom: 16px;
+    }
+    .prep-empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-3);
+    }
+    .prep-empty .empty-illus {
+      font-size: 60px;
+      margin-bottom: 16px;
+      display: block;
+      filter: grayscale(1);
+      opacity: .3;
+    }
+    .prep-empty h4 {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--text-2);
+      margin-bottom: 6px;
+    }
+    .prep-empty p { font-size: 14px; }
+
+    /* ── LOCKED STATE ── */
+    .locked-state { text-align: center; padding: 80px 20px; }
+    .lock-icon-wrap {
+      width: 88px; height: 88px;
+      border-radius: 26px;
+      background: var(--amber-soft);
+      border: 1px solid rgba(246,201,14,.25);
+      display: grid; place-items: center;
+      margin: 0 auto 22px;
+      font-size: 36px;
+      color: var(--amber);
+    }
+    .locked-state h3 {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+    .locked-state p { color: var(--text-2); max-width: 360px; margin: 0 auto 22px; font-size: 15px; }
+
+    /* ── PROFILE ── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1/-1; }
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .form-input, .form-select, .form-textarea {
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      transition: all .2s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(255,82,0,.12);
+    }
+    .form-select { appearance: none; cursor: pointer; }
+    .form-textarea { resize: vertical; min-height: 90px; }
+    .form-actions { grid-column: 1/-1; display: flex; gap: 12px; margin-top: 8px; }
+
+    /* ── QUICK ACTION CARDS ── */
+    .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .qa-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 16px;
+      padding: 18px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .qa-card:hover { border-color: var(--brand); background: var(--brand-soft); transform: translateY(-2px); }
+    .qa-card:hover .qa-icon { background: var(--brand); color: #fff; }
+    .qa-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--surface3);
+      display: grid; place-items: center;
+      font-size: 18px;
+      color: var(--text-2);
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    .qa-text .qa-title { font-weight: 700; font-size: 14px; color: var(--text); }
+    .qa-text .qa-desc { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+    /* ── RECENT ACTIVITY / DISPATCH COUNTER ── */
+    .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .act-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .qa-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .schedule-grid { grid-template-columns: 1fr; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .main { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <nav class="topbar">
+    <a class="topbar-brand" href="/cook/dashboard">
+      <span class="brand-logo">🔥</span>
+      SmartTiffin<span class="brand-dot">.</span>
+    </a>
+    <div class="topbar-right">
+      <div class="on-duty-indicator" th:if="${isOnDuty}">
+        <div class="status-dot"></div>
+        On Duty
+      </div>
+      <div class="chef-pill">
+        <div class="chef-avatar"><i class="fas fa-user-chef" style="font-size:11px"></i></div>
+        <span th:text="${cook.fullName}">Chef Kumar</span>
+      </div>
+      <form th:action="@{/logout}" method="post" style="margin:0">
+        <button class="btn-logout" type="submit">
+          <i class="fas fa-power-off" style="font-size:12px"></i> Go Offline
+        </button>
+      </form>
+    </div>
+  </nav>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-label">Main Menu</div>
+
+      <a href="/cook/dashboard" class="nav-item" th:classappend="${activeTab == 'dashboard' ? 'active' : ''}">
+        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+        Dashboard
+      </a>
+      <a href="/cook/schedule" class="nav-item" th:classappend="${activeTab == 'schedule' ? 'active' : ''}">
+        <span class="nav-icon"><i class="fas fa-calendar-alt"></i></span>
+        My Schedule
+      </a>
+      <a href="/cook/prep-list" class="nav-item" th:classappend="${activeTab == 'prep' ? 'active' : ''}">
+        <span class="nav-icon"><i class="fas fa-utensils"></i></span>
+        Prep List
+        <span class="lock-badge" th:if="${activeTab != 'prep' && (isOnDuty == null || !isOnDuty)}">
+          <i class="fas fa-lock" style="font-size:9px;margin-right:2px"></i> Locked
+        </span>
+        <span class="nav-badge" th:if="${isOnDuty && !#lists.isEmpty(pendingOrders)}" th:text="${#lists.size(pendingOrders)}">3</span>
+      </a>
+
+      <div class="sidebar-label" style="margin-top:8px">Account</div>
+      <a href="/cook/profile" class="nav-item" th:classappend="${activeTab == 'profile' ? 'active' : ''}">
+        <span class="nav-icon"><i class="fas fa-user-cog"></i></span>
+        Profile Settings
+      </a>
+
+      <div class="sidebar-bottom">
+        <div class="station-card">
+          <div class="s-lbl">My Station</div>
+          <div class="station-badge veg" th:if="${cook.cookPreference == 'Pure Veg'}">
+            <i class="fas fa-leaf"></i> Pure Veg — Green
+          </div>
+          <div class="station-badge nonveg" th:if="${cook.cookPreference == 'Veg-Non-Veg Mix'}">
+            <i class="fas fa-drumstick-bite"></i> Non-Veg — Red
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <div th:if="${param.msg}" class="alert-bar alert-success">
+        <i class="fas fa-check-circle"></i>
+        <span th:switch="${param.msg[0]}">
+          <span th:case="'ShiftBooked'">🎉 Shift booked! Your OTP is ready below.</span>
+          <span th:case="'ShiftCancelled'">Shift cancelled successfully.</span>
+          <span th:case="'KitchenUnlocked'">✅ Kitchen unlocked — you're now on duty!</span>
+          <span th:case="'ProfileUpdated'">Profile saved successfully.</span>
+          <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+        </span>
+      </div>
+      <div th:if="${param.error != null and param.error[0] == 'SlotAlreadyBooked'}" class="alert-bar alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> You've already booked this slot for today.
+      </div>
+      <div th:if="${param.error != null and param.error[0] != 'SlotAlreadyBooked'}" class="alert-bar alert-danger">
+        <i class="fas fa-times-circle"></i>
+        <span th:switch="${param.error[0]}">
+          <span th:case="'InvalidHub'">Selected hub is not active. Please choose another.</span>
+          <span th:case="'NoHubSelected'">Please select a hub before choosing a time slot.</span>
+          <span th:case="'InvalidBooking'">Invalid booking — you don't own this shift.</span>
+          <span th:case="'CannotCancelCheckedInShift'">You've already checked in — shift cannot be cancelled.</span>
+          <span th:case="'TooLateToCancel'">Cancellation window has closed (must be 1 hour before start).</span>
+          <span th:case="'InvalidEntryOTP'">OTP not recognised. Please ask the admin for your entry code.</span>
+          <span th:case="'TooEarlyToCheckIn'">Too early! Check-in opens 5 minutes before your shift.</span>
+          <span th:case="'SlotTimePassed'">That shift slot has already passed for today.</span>
+          <span th:case="'NotOnDuty'">You must be checked in to pack orders.</span>
+          <span th:case="*" th:text="${param.error[0]}">An error occurred.</span>
+        </span>
+      </div>
+
+      <div th:if="${activeTab == 'dashboard'}">
+        <div class="page-header">
+          <h2>Good <span th:text="${#temporals.format(#temporals.createNow(), 'HH') < '12' ? 'Morning' : (#temporals.format(#temporals.createNow(), 'HH') < '17' ? 'Afternoon' : 'Evening')}">Morning</span>! 👋</h2>
+          <p>Here's your overview for <strong th:text="${#temporals.format(#temporals.createNow(), 'EEEE, dd MMMM yyyy')}">Today</strong></p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-brand">
+            <div class="accent-bar"></div>
+            <div class="icon-wrap"><i class="fas fa-indian-rupee-sign"></i></div>
+            <div class="s-label">Earnings Today</div>
+            <div class="s-value">₹<span th:text="${earnings}">0</span></div>
+            <div class="s-sub">₹15 per packed tiffin</div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="accent-bar"></div>
+            <div class="icon-wrap"><i class="fas fa-box-check"></i></div>
+            <div class="s-label">Tiffins Dispatched</div>
+            <div class="s-value" th:text="${dispatched}">0</div>
+            <div class="s-sub">Successfully packed today</div>
+          </div>
+          <div class="stat-card stat-amber">
+            <div class="accent-bar"></div>
+            <div class="icon-wrap"><i class="fas fa-clock"></i></div>
+            <div class="s-label">Remaining in Queue</div>
+            <div class="s-value" th:text="${remaining}">0</div>
+            <div class="s-sub">Pending at your station</div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">
+            <span class="t-icon"><i class="fas fa-bolt"></i></span>
+            Quick Actions
+          </div>
+          <div class="qa-grid">
+            <a href="/cook/schedule" class="qa-card">
+              <div class="qa-icon"><i class="fas fa-calendar-plus"></i></div>
+              <div class="qa-text">
+                <div class="qa-title">Book a Shift</div>
+                <div class="qa-desc">Schedule your next kitchen slot</div>
+              </div>
+            </a>
+            <a href="/cook/prep-list" class="qa-card">
+              <div class="qa-icon"><i class="fas fa-utensils"></i></div>
+              <div class="qa-text">
+                <div class="qa-title">Open Prep List</div>
+                <div class="qa-desc">View and pack pending orders</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${activeTab == 'schedule'}">
+        <div class="page-header">
+          <h2>Manage Schedule</h2>
+          <p>Book your kitchen shift and check in at the hub</p>
+        </div>
+
+        <div class="schedule-grid">
+
+          <div class="section-card">
+            <div class="section-title">
+              <span class="t-icon"><i class="fas fa-building"></i></span>
+              Choose Hub &amp; Slot
+            </div>
+
+            <form id="bookSlotForm" th:action="@{/cook/book-slot}" method="post" style="display:flex;flex-direction:column">
+              <input type="hidden" name="slotType" id="slotTypeInput" value="">
+
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px">Step 1 — Select Hub</div>
+
+              <div th:if="${activeHubs == null or #lists.isEmpty(activeHubs)}" class="no-hubs-warn">
+                <i class="fas fa-exclamation-triangle"></i> No active hubs — ask admin to create one.
+              </div>
+
+              <div th:unless="${activeHubs == null or #lists.isEmpty(activeHubs)}">
+                <label th:each="hub : ${activeHubs}" class="hub-radio-label" onclick="onHubSelected()">
+                  <input type="radio" name="hubId" th:value="${hub.id}">
+                  <div style="flex:1">
+                    <div class="hub-name-r" th:text="${hub.name}">Hub Name</div>
+                    <div class="hub-addr-r" th:text="${hub.address}">Address</div>
+                    <div class="hub-chips">
+                      <span class="hchip hchip-area" th:text="${hub.area + ', ' + hub.city}">Area</span>
+                      <span class="hchip hchip-cap"><i class="fas fa-users" style="font-size:9px;margin-right:3px"></i><span th:text="${hub.capacity}">10</span> max</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="slot-section-lbl">Step 2 — Select Time Slot</div>
+
+              <div id="hub-required-notice"
+                   th:unless="${activeHubs == null or #lists.isEmpty(activeHubs)}"
+                   class="hub-required-notice">
+                <i class="fas fa-arrow-up"></i> Select a hub above first
+              </div>
+
+              <div style="display:flex;flex-direction:column">
+                <button type="button" class="slot-btn slot-time-btn"
+                        th:attr="data-timelocked=${!canBookBreakfast or hasBreakfast}"
+                        onclick="bookSlot('BREAKFAST')" disabled>
+                  <div class="slot-icon slot-icon-b"><i class="fas fa-coffee"></i></div>
+                  <div class="slot-meta">
+                    <div class="slot-name">Breakfast Shift</div>
+                    <div class="slot-time">Starts 8:00 AM</div>
+                  </div>
+                  <span class="booked-chip" th:if="${hasBreakfast}"><i class="fas fa-check"></i> Booked</span>
+                </button>
+                <button type="button" class="slot-btn slot-time-btn"
+                        th:attr="data-timelocked=${!canBookLunch or hasLunch}"
+                        onclick="bookSlot('LUNCH')" disabled>
+                  <div class="slot-icon slot-icon-l"><i class="fas fa-sun"></i></div>
+                  <div class="slot-meta">
+                    <div class="slot-name">Lunch Shift</div>
+                    <div class="slot-time">Starts 12:00 PM</div>
+                  </div>
+                  <span class="booked-chip" th:if="${hasLunch}"><i class="fas fa-check"></i> Booked</span>
+                </button>
+                <button type="button" class="slot-btn slot-time-btn"
+                        th:attr="data-timelocked=${!canBookDinner or hasDinner}"
+                        onclick="bookSlot('DINNER')" disabled>
+                  <div class="slot-icon slot-icon-d"><i class="fas fa-moon"></i></div>
+                  <div class="slot-meta">
+                    <div class="slot-name">Dinner Shift</div>
+                    <div class="slot-time">Starts 7:00 PM</div>
+                  </div>
+                  <span class="booked-chip" th:if="${hasDinner}"><i class="fas fa-check"></i> Booked</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="checkin-card">
+            <div class="section-title">
+              <span class="t-icon"><i class="fas fa-door-open"></i></span>
+              Hub Check-In
+            </div>
+
+            <div th:if="${isOnDuty}" class="on-duty-banner">
+              <span class="big-icon">✅</span>
+              <h5>You're On Duty!</h5>
+              <p>Kitchen is unlocked and ready for your station</p>
+              <a href="/cook/prep-list" class="btn btn-primary">
+                <i class="fas fa-utensils"></i> Open Prep List
+              </a>
+            </div>
+
+            <div th:unless="${isOnDuty}" class="waiting-checkin">
+              <div class="waiting-icon-wrap" style="color: var(--brand); background: var(--brand-soft); border: 1px solid rgba(255,82,0,.2);">
+                <i class="fas fa-key"></i>
+              </div>
+              <h5 class="waiting-title">Enter OTP to Unlock</h5>
+              <p class="waiting-desc">
+                Get your 4-digit entry OTP from the hub admin. Check-in unlocks 5 minutes before your shift starts.
+              </p>
+              <form th:action="@{/cook/hub-checkin}" method="post" style="max-width: 300px; margin: 0 auto 22px;">
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" name="otp" class="otp-input" placeholder="0000" maxlength="4" required autocomplete="off">
+                  <button type="submit" class="btn-otp-submit"><i class="fas fa-arrow-right"></i></button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card" style="margin-top:20px">
+          <div class="section-title">
+            <span class="t-icon"><i class="fas fa-list-check"></i></span>
+            My Shifts Today
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Hub</th>
+                <th>Slot</th>
+                <th>Status</th>
+                <th>OTP</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="booking : ${myBookings}">
+                <td style="color:var(--text-2);font-size:13px" th:text="${booking.shiftDate}">—</td>
+                <td>
+                  <span th:if="${booking.hub != null}" style="font-size:13px;font-weight:700" th:text="${booking.hub.name}">—</span>
+                  <span th:unless="${booking.hub != null}" style="font-size:12px;color:var(--text-3)">Not assigned</span>
+                </td>
+                <td><span class="chip chip-slot" th:text="${booking.slot}">LUNCH</span></td>
+                <td>
+                  <span class="chip chip-checked" th:if="${booking.checkedIn}"><i class="fas fa-circle" style="font-size:7px"></i> On Duty</span>
+                  <span class="chip chip-pending" th:unless="${booking.checkedIn}"><i class="fas fa-circle" style="font-size:7px"></i> Pending</span>
+                </td>
+                <td>
+                  <span class="chip chip-info" th:unless="${booking.checkedIn}" th:text="${booking.entryOtp}">0000</span>
+                  <span style="color:var(--text-3);font-size:13px" th:if="${booking.checkedIn}">—</span>
+                </td>
+                <td>
+                  <form th:unless="${booking.checkedIn}" th:action="@{'/cook/cancel-slot/' + ${booking.id}}" method="post"
+                        onsubmit="return confirm('Cancel this shift? Must be ≥1 hour before start.')">
+                    <button type="submit" class="btn btn-danger-outline"><i class="fas fa-times"></i> Cancel</button>
+                  </form>
+                  <span th:if="${booking.checkedIn}" style="color:var(--green);font-size:13px;font-weight:700">
+                    <i class="fas fa-check-circle"></i> Checked In
+                  </span>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(myBookings)}">
+                <td colspan="6">
+                  <div class="empty-row">
+                    <i class="fas fa-calendar-xmark"></i>
+                    No shifts booked for today
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size:12px;color:var(--text-3);margin-top:16px;font-style:italic">
+            * Cancellations must be made at least 1 hour before the shift start time.
+          </p>
+        </div>
+      </div>
+
+      <div th:if="${activeTab == 'prep'}">
+
+        <div th:if="${!isOnDuty}" class="locked-state">
+          <div class="lock-icon-wrap"><i class="fas fa-lock"></i></div>
+          <h3>Prep List Locked 🔒</h3>
+          <p>Check in at the hub to unlock your kitchen display and start packing orders.</p>
+          <a href="/cook/schedule" class="btn btn-primary" style="margin:0 auto">
+            <i class="fas fa-arrow-right"></i> Go to Check-In
+          </a>
+        </div>
+
+        <div th:if="${isOnDuty}">
+          <div class="prep-header">
+            <div class="page-header" style="margin-bottom:0">
+              <h2>Live Prep List</h2>
+              <p>Current shift: <strong th:text="${currentShift}">—</strong></p>
+            </div>
+            <div class="live-badge">
+              <div class="live-dot"></div>
+              <span th:text="${#lists.size(pendingOrders)}">0</span> Pending
+            </div>
+          </div>
+
+          <div class="prep-grid" th:if="${!#lists.isEmpty(pendingOrders)}">
+            <div th:each="order : ${pendingOrders}" class="prep-card"
+                 th:classappend="${cook.cookPreference == 'Pure Veg' ? 'prep-card-veg' : 'prep-card-nonveg'}">
+              <div class="order-num">
+                Order #<span th:text="${order.id}">—</span>
+                <span class="order-tag-veg" th:if="${cook.cookPreference == 'Pure Veg'}">🥦 VEG</span>
+                <span class="order-tag-nonveg" th:if="${cook.cookPreference == 'Veg-Non-Veg Mix'}">🍗 NON-VEG</span>
+              </div>
+              <div class="order-items" th:text="${order.items}">Paneer Thali</div>
+              <div class="order-time">
+                <i class="fas fa-clock"></i>
+                <span th:text="${#temporals.format(order.orderDate, 'HH:mm')}">—</span>
+                &nbsp;·&nbsp; Placed just now
+              </div>
+              <form th:action="@{'/cook/order/pack/' + ${order.id}}" method="post">
+                <button type="submit"
+                  th:class="${cook.cookPreference == 'Pure Veg' ? 'btn-pack btn-pack-veg' : 'btn-pack btn-pack-nonveg'}">
+                  <i class="fas fa-box-check"></i> Mark as Packed
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="prep-empty" th:if="${#lists.isEmpty(pendingOrders)}">
+            <span class="empty-illus">🎉</span>
+            <h4>All caught up!</h4>
+            <p>No pending orders at your station right now. Great work!</p>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${activeTab == 'profile'}">
+        <div class="page-header">
+          <h2>Profile &amp; Settings</h2>
+          <p>Update your personal details and kitchen preferences</p>
+        </div>
+        <div class="section-card">
+          <form th:action="@{/cook/profile/update}" method="post">
+            <div class="profile-grid">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="fullName" class="form-input" th:value="${cook.fullName}" required placeholder="Your full name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mobile Number</label>
+                <input type="text" name="mobileNumber" class="form-input" th:value="${cook.mobileNumber}" required placeholder="10-digit mobile">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Address</label>
+                <textarea name="fullAddress" class="form-textarea" required th:text="${cook.fullAddress}" placeholder="Your full address"></textarea>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Kitchen Station Preference</label>
+                <select name="cookPreference" class="form-select" required>
+                  <option value="Pure Veg" th:selected="${cook.cookPreference == 'Pure Veg'}">🥦 Pure Veg Only — Green Station</option>
+                  <option value="Veg-Non-Veg Mix" th:selected="${cook.cookPreference == 'Veg-Non-Veg Mix'}">🍗 Veg &amp; Non-Veg Mixed — Red Station</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                <a href="/cook/dashboard" class="btn btn-ghost">Cancel</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ── URL cleanup
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg') || url.searchParams.has('error')) {
+      setTimeout(() => {
+        url.searchParams.delete('msg');
+        url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.href);
+      }, 100);
+    }
+  }
+
+  // ── Hub gate
+  function onHubSelected() {
+    setTimeout(() => {
+      const anyChecked = document.querySelector('input[name="hubId"]:checked');
+      if (!anyChecked) return;
+
+      document.querySelectorAll('.hub-radio-label').forEach(l => l.classList.remove('selected'));
+      anyChecked.closest('.hub-radio-label').classList.add('selected');
+
+      const notice = document.getElementById('hub-required-notice');
+      if (notice) notice.style.display = 'none';
+
+      document.querySelectorAll('.slot-time-btn').forEach(btn => {
+        if (btn.dataset.timelocked !== 'true') btn.disabled = false;
+      });
+    }, 10);
+  }
+
+  // ── Book slot
+  function bookSlot(slotType) {
+    const hubInput = document.querySelector('input[name="hubId"]:checked');
+    if (!hubInput) {
+      alert('Please select a hub first.');
+      return;
+    }
+    document.getElementById('slotTypeInput').value = slotType;
+    document.getElementById('bookSlotForm').submit();
+  }
+
+  // ── Auto-select if only one hub
+  window.addEventListener('DOMContentLoaded', () => {
+    const hubRadios = document.querySelectorAll('input[name="hubId"]');
+    if (hubRadios.length === 1) {
+      hubRadios[0].checked = true;
+      onHubSelected();
+    }
+  });
+
+  // ── OTP AUTO-SUBMIT ──
+  const otpInput = document.querySelector('.otp-input');
+  if (otpInput) {
+    otpInput.addEventListener('input', e => {
+      // Strip out anything that isn't a number
+      e.target.value = e.target.value.replace(/\D/g, ''); 
+      // Auto-submit when 4 digits are entered
+      if (e.target.value.length === 4) {
+        e.target.closest('form').submit();
+      }
+    });
+  }
+
+</script>
+</body>
+</html>

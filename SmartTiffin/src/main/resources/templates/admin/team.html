@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Team | SmartTiffin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--brand:#FF5200;--brand-l:#FF6B35;--brand-soft:rgba(255,82,0,.10);--brand-mid:rgba(255,82,0,.18);--bg:#0C0C0C;--surface:#1A1A1A;--surface2:#222;--surface3:#2A2A2A;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--green:#4ADE80;--green-soft:rgba(74,222,128,.11);--amber:#FBBF24;--amber-soft:rgba(251,191,36,.11);--red:#F87171;--red-soft:rgba(248,113,113,.11);--blue:#60A5FA;--blue-soft:rgba(96,165,250,.11);--purple:#C084FC;--text:#F2F2F2;--text-2:#999;--text-3:#555;--r:14px;--r-xl:20px;--r-2xl:26px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;min-height:100vh}
+
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:300;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(12,12,12,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:var(--text)}
+    .brand-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),var(--brand-l));border-radius:10px;display:grid;place-items:center;font-size:17px;box-shadow:0 4px 14px rgba(255,82,0,.4)}
+    .brand-dot{color:var(--brand)}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .btn-nav{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:50px;font-size:12px;font-weight:700;text-decoration:none;border:1px solid var(--border2);color:var(--text-2);background:transparent;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s}
+    .btn-nav:hover{background:var(--surface2);color:var(--text)}
+    .btn-nav-brand{background:var(--brand-soft);color:var(--brand);border-color:rgba(255,82,0,.25)}
+    .btn-nav-brand:hover{background:var(--brand);color:#fff}
+
+    /* PAGE */
+    .page{padding:28px 24px;max-width:1240px;margin:0 auto}
+    .page-head{margin-bottom:26px}
+    .page-head h1{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;letter-spacing:-.5px;margin-bottom:4px}
+    .page-head p{font-size:13px;color:var(--text-2)}
+    @keyframes riseUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ALERTS */
+    .alert{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:14px;font-weight:600;font-size:14px;margin-bottom:22px;animation:riseUp .3s ease}
+    .alert-s{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+    .alert-d{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+    /* ROLE PRESET CARDS */
+    .presets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+    .preset-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;transition:transform .2s,border-color .2s}
+    .preset-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+    .preset-top{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .preset-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px}
+    .pb-super{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+    .pb-hub{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
+    .pb-viewer{background:var(--surface3);color:var(--text-2);border:1px solid var(--border2)}
+    .preset-sub{font-size:12px;color:var(--text-2);padding:12px 18px 6px}
+    .perm-list{padding:0 18px 16px;display:flex;flex-direction:column;gap:6px}
+    .perm-item{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+    .perm-yes{color:var(--green)}.perm-no{color:var(--red)}
+
+    /* MAIN GRID */
+    .main-grid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+
+    /* FORM CARD */
+    .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+    .form-card-head{padding:16px 20px;background:linear-gradient(135deg,#1c0900,#200d00);border-bottom:1px solid rgba(255,82,0,.12);display:flex;align-items:center;gap:10px}
+    .form-head-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-l));display:grid;place-items:center;font-size:14px;color:#fff;box-shadow:0 3px 10px rgba(255,82,0,.3)}
+    .form-head-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px}
+    .form-body{padding:18px 20px;display:flex;flex-direction:column;gap:13px}
+    .fg{display:flex;flex-direction:column;gap:5px}
+    .fg-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3)}
+    .fg-input,.fg-select{background:var(--surface2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 13px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;transition:all .2s;width:100%}
+    .fg-input:focus,.fg-select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(255,82,0,.1)}
+    .fg-select{appearance:none;cursor:pointer}
+    .btn-create{width:100%;padding:13px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;box-shadow:0 4px 14px rgba(255,82,0,.3);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+    .btn-create:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(255,82,0,.4)}
+    .hub-field{display:none}
+
+    /* TABLE CARD */
+    .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+    .table-card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .table-card-head h3{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+    .data-table{width:100%;border-collapse:collapse}
+    .data-table th{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);padding:12px 20px;border-bottom:1px solid var(--border);text-align:left}
+    .data-table td{padding:14px 20px;border-bottom:1px solid var(--border);font-size:14px;vertical-align:middle}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tr:hover td{background:var(--surface2)}
+    .u-name{font-weight:700;font-size:14px}
+    .u-email{font-size:12px;color:var(--text-2);margin-top:2px}
+    .role-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:4px 11px;border-radius:20px}
+    .rb-super{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+    .rb-hub{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
+    .rb-viewer{background:var(--surface3);color:var(--text-2);border:1px solid var(--border2)}
+    .hub-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--brand-soft);color:var(--brand)}
+    .td-actions{display:flex;gap:7px;align-items:center;justify-content:flex-end}
+    .btn-edit{width:32px;height:32px;border-radius:9px;background:var(--blue-soft);color:var(--blue);border:1px solid rgba(96,165,250,.22);display:grid;place-items:center;cursor:pointer;font-size:12px;transition:all .2s}
+    .btn-edit:hover{background:var(--blue);color:#fff}
+    .btn-del{width:32px;height:32px;border-radius:9px;background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.22);display:grid;place-items:center;cursor:pointer;font-size:12px;transition:all .2s}
+    .btn-del:hover{background:var(--red);color:#fff}
+    .empty-row{text-align:center;padding:40px;color:var(--text-3)}
+
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:24px}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-2xl);overflow:hidden;width:100%;max-width:420px;animation:riseUp .25s ease}
+    .modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+    .modal-hdr h3{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+    .modal-close{background:transparent;border:none;color:var(--text-2);font-size:17px;cursor:pointer;padding:4px;transition:color .2s}
+    .modal-close:hover{color:var(--text)}
+    .modal-body{padding:20px;display:flex;flex-direction:column;gap:13px}
+    .btn-save{width:100%;padding:13px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 14px rgba(255,82,0,.3)}
+    .btn-save:hover{transform:translateY(-1px)}
+
+    @media(max-width:1024px){.main-grid{grid-template-columns:1fr}.presets-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.page{padding:18px 16px}.presets-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:600px){.presets-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <a class="brand" href="/admin/dashboard">
+    <span class="brand-logo">🔥</span>
+    SmartTiffin<span class="brand-dot">.</span>
+  </a>
+  <div class="topbar-right">
+    <a href="/admin/dashboard" class="btn-nav"><i class="fas fa-arrow-left" style="font-size:11px"></i> Dashboard</a>
+    <a href="/admin/verifications" class="btn-nav btn-nav-brand"><i class="fas fa-id-card" style="font-size:11px"></i> Verifications</a>
+    <form th:action="@{/logout}" method="post" style="margin:0">
+      <button class="btn-nav" type="submit"><i class="fas fa-power-off" style="font-size:11px"></i> Log Out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Team Management</h1>
+    <p>Create admin users, assign roles, and manage hub access</p>
+  </div>
+
+  <!-- ALERTS -->
+  <div th:if="${param.msg}" class="alert alert-s">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'AdminCreated'">New admin user created successfully.</span>
+      <span th:case="'RoleUpdated'">Admin role updated.</span>
+      <span th:case="'AdminDeleted'">Admin user removed.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="alert alert-d">
+    <i class="fas fa-times-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'EmailAlreadyExists'">That email is already registered.</span>
+      <span th:case="'CannotDeleteSelf'">You cannot delete your own account.</span>
+      <span th:case="'AccessDenied'">You don't have permission to do that.</span>
+      <span th:case="*" th:text="${param.error[0]}">Error.</span>
+    </span>
+  </div>
+
+  <!-- ROLE PRESETS -->
+  <div class="presets-grid">
+    <div class="preset-card">
+      <div class="preset-top"><span class="preset-badge pb-super"><i class="fas fa-crown"></i> Super Admin</span></div>
+      <div class="preset-sub">Full platform control. No restrictions.</div>
+      <div class="perm-list">
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Create / delete hubs</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Manage menu plans</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Approve verifications</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Manage admin team</div>
+      </div>
+    </div>
+    <div class="preset-card">
+      <div class="preset-top"><span class="preset-badge pb-hub"><i class="fas fa-building"></i> Hub Manager</span></div>
+      <div class="preset-sub">Manages one assigned hub only.</div>
+      <div class="perm-list">
+        <div class="perm-item"><i class="fas fa-times perm-no"></i> Cannot create / delete hubs</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Toggle their hub active/inactive</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> See their hub's shifts &amp; orders</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> Manual staff check-in</div>
+      </div>
+    </div>
+    <div class="preset-card">
+      <div class="preset-top"><span class="preset-badge pb-viewer"><i class="fas fa-eye"></i> Viewer</span></div>
+      <div class="preset-sub">Read-only access. No actions allowed.</div>
+      <div class="perm-list">
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> View dashboard &amp; stats</div>
+        <div class="perm-item"><i class="fas fa-check perm-yes"></i> View all orders &amp; shifts</div>
+        <div class="perm-item"><i class="fas fa-times perm-no"></i> Cannot edit anything</div>
+        <div class="perm-item"><i class="fas fa-times perm-no"></i> No action buttons visible</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- Create Form -->
+    <div>
+      <div class="form-card">
+        <div class="form-card-head">
+          <div class="form-head-icon"><i class="fas fa-user-plus"></i></div>
+          <div class="form-head-title">Add Admin User</div>
+        </div>
+        <form th:action="@{/admin/team/create}" method="post" class="form-body">
+          <div class="fg"><label class="fg-label">Full Name</label><input type="text" name="fullName" class="fg-input" placeholder="e.g. Rahul Sharma" required></div>
+          <div class="fg"><label class="fg-label">Email</label><input type="email" name="email" class="fg-input" placeholder="rahul@example.com" required></div>
+          <div class="fg"><label class="fg-label">Password</label><input type="password" name="password" class="fg-input" placeholder="Min 8 characters" required></div>
+          <div class="fg">
+            <label class="fg-label">Role Preset</label>
+            <select name="adminRole" class="fg-select" required onchange="toggleHub(this.value,'hubField')">
+              <option value="">Select role</option>
+              <option value="SUPER_ADMIN">👑 Super Admin</option>
+              <option value="HUB_MANAGER">🏢 Hub Manager</option>
+              <option value="VIEWER">👁 Viewer</option>
+            </select>
+          </div>
+          <div class="fg hub-field" id="hubField">
+            <label class="fg-label">Assign Hub</label>
+            <select name="assignedHubId" class="fg-select">
+              <option value="">Select hub</option>
+              <option th:each="hub : ${allHubs}" th:value="${hub.id}" th:text="${hub.name}">Hub</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-create"><i class="fas fa-user-plus"></i> Create Admin</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Table -->
+    <div class="table-card">
+      <div class="table-card-head">
+        <div style="width:32px;height:32px;border-radius:9px;background:var(--surface2);display:grid;place-items:center;font-size:13px;color:var(--text-2)"><i class="fas fa-users-cog"></i></div>
+        <h3>Admin Team</h3>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Assigned Hub</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="u : ${adminUsers}">
+            <td>
+              <div class="u-name" th:text="${u.fullName}">Name</div>
+              <div class="u-email" th:text="${u.email}">email</div>
+            </td>
+            <td>
+              <span th:if="${u.adminRole == null or u.adminRole.name() == 'SUPER_ADMIN'}" class="role-badge rb-super"><i class="fas fa-crown" style="font-size:9px"></i> Super Admin</span>
+              <span th:if="${u.adminRole != null and u.adminRole.name() == 'HUB_MANAGER'}" class="role-badge rb-hub"><i class="fas fa-building" style="font-size:9px"></i> Hub Manager</span>
+              <span th:if="${u.adminRole != null and u.adminRole.name() == 'VIEWER'}" class="role-badge rb-viewer"><i class="fas fa-eye" style="font-size:9px"></i> Viewer</span>
+            </td>
+            <td>
+              <span th:if="${u.assignedHub != null}" class="hub-badge"><i class="fas fa-map-pin" style="font-size:9px"></i> <span th:text="${u.assignedHub.name}">Hub</span></span>
+              <span th:unless="${u.assignedHub != null}" style="color:var(--text-3);font-size:13px">—</span>
+            </td>
+            <td>
+              <div class="td-actions">
+                <button type="button" class="btn-edit edit-role-btn"
+                        th:data-userid="${u.id}"
+                        th:data-role="${u.adminRole != null ? u.adminRole.name() : 'SUPER_ADMIN'}"
+                        th:data-hubid="${u.assignedHub != null ? u.assignedHub.id : ''}">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <form th:action="@{'/admin/team/delete/' + ${u.id}}" method="post" style="margin:0" onsubmit="return confirm('Remove this admin user?')">
+                  <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(adminUsers)}">
+            <td colspan="4"><div class="empty-row"><i class="fas fa-users" style="display:block;font-size:28px;margin-bottom:8px;opacity:.1"></i>No admin users found</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ROLE MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3><i class="fas fa-user-cog" style="color:var(--brand)"></i> Change Role</h3>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="editForm" method="post" class="modal-body">
+      <div class="fg">
+        <label class="fg-label">Role Preset</label>
+        <select name="adminRole" id="editRoleSelect" class="fg-select" required onchange="toggleHub(this.value,'editHubField')">
+          <option value="SUPER_ADMIN">👑 Super Admin</option>
+          <option value="HUB_MANAGER">🏢 Hub Manager</option>
+          <option value="VIEWER">👁 Viewer</option>
+        </select>
+      </div>
+      <div class="fg hub-field" id="editHubField">
+        <label class="fg-label">Assign Hub</label>
+        <select name="assignedHubId" id="editHubSelect" class="fg-select">
+          <option value="">Select hub</option>
+          <option th:each="hub : ${allHubs}" th:value="${hub.id}" th:text="${hub.name}">Hub</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleHub(role,fieldId){document.getElementById(fieldId).style.display=role==='HUB_MANAGER'?'flex':'none'}
+
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('.edit-role-btn');
+    if(btn){
+      const userId=btn.dataset.userid,role=btn.dataset.role||'SUPER_ADMIN',hubId=btn.dataset.hubid||'';
+      document.getElementById('editForm').action='/admin/team/update/'+userId;
+      document.getElementById('editRoleSelect').value=role;
+      toggleHub(role,'editHubField');
+      if(hubId)document.getElementById('editHubSelect').value=hubId;
+      document.getElementById('editModal').classList.add('open');
+    }
+  });
+
+  document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')});
+
+  if(window.history.replaceState){const url=new URL(window.location.href);if(url.searchParams.has('msg')||url.searchParams.has('error')){url.searchParams.delete('msg');url.searchParams.delete('error');window.history.replaceState({},'',url.href)}}
+</script>
+</body>
+</html>

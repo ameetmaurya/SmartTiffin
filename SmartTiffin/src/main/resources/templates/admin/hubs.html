@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub Management — NutriDeliver Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand:   #FF5722;
+      --dark:    #0F0F0F;
+      --dark2:   #161616;
+      --dark3:   #1E1E1E;
+      --dark4:   #242424;
+      --border:  rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text:    #F5F0EB;
+      --muted:   #888;
+      --faint:   #444;
+      --success: #4CAF50;
+      --warn:    #FFC107;
+      --info:    #2196F3;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--dark); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; min-height: 100vh; display: grid; grid-template-columns: 240px 1fr; grid-template-rows: auto 1fr; }
+
+    /* TOPBAR */
+    .topbar { grid-column: 1 / -1; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 60px; background: rgba(15,15,15,0.96); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; width: 200px; }
+    .logo-mark { width: 32px; height: 32px; background: var(--brand); border-radius: 9px; display: grid; place-items: center; font-size: 15px; color: #fff; }
+    .logo-name { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 900; color: var(--text); }
+    .logo-badge { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--brand); background: rgba(255,87,34,0.1); border: 1px solid rgba(255,87,34,0.2); padding: 2px 8px; border-radius: 50px; margin-left: 4px; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), #FF7043); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; }
+
+    /* SIDEBAR */
+    .sidenav { background: var(--dark2); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); padding: 0 10px; margin: 16px 0 6px; }
+    .nav-section-label:first-child { margin-top: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 600; color: var(--muted); transition: all .18s; }
+    .nav-item:hover { background: var(--dark3); color: var(--text); }
+    .nav-item.active { background: rgba(255,87,34,0.1); color: var(--brand); }
+    .nav-icon { width: 18px; text-align: center; font-size: 14px; }
+    .sidenav-footer { margin-top: auto; }
+    .logout-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: inherit; transition: all .18s; }
+    .logout-btn:hover { background: rgba(255,87,34,0.1); color: var(--brand); }
+
+    /* MAIN */
+    .main { padding: 32px; overflow-y: auto; }
+    .page-hdr { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+    .page-hdr h1 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 900; letter-spacing: -0.8px; }
+    .page-hdr p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
+    .alert-s { background: rgba(76,175,80,.1); color: #81C784; border: 1px solid rgba(76,175,80,.3); }
+    .alert-e { background: rgba(255,87,34,.1); color: #FF8A65; border: 1px solid rgba(255,87,34,.3); }
+
+    /* Grid layout */
+    .hub-layout { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+
+    /* CREATE CARD */
+    .create-card { background: var(--dark2); border: 1px solid var(--border2); border-radius: 20px; overflow: hidden; position: sticky; top: 92px; }
+    .create-card-head { padding: 20px 24px; background: rgba(255,87,34,0.06); border-bottom: 1px solid rgba(255,87,34,0.15); }
+    .create-card-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--text); }
+    .create-card-body { padding: 24px; }
+
+    .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+    .field-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); }
+    .f-input { width: 100%; background: var(--dark4); border: 1.5px solid var(--border2); border-radius: 11px; padding: 11px 14px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; transition: border-color .2s, box-shadow .2s; }
+    .f-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,87,34,0.1); }
+    .f-input::placeholder { color: var(--faint); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn-create { width: 100%; padding: 13px; border-radius: 11px; font-size: 14px; font-weight: 800; background: var(--brand); color: #fff; border: none; cursor: pointer; font-family: inherit; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
+    .btn-create:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,87,34,0.3); }
+
+    /* HUB LIST */
+    .hub-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .hub-list-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+    .hub-count { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: var(--dark3); color: var(--muted); border: 1px solid var(--border2); }
+
+    .hub-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    .hub-card { background: var(--dark2); border: 1px solid var(--border); border-radius: 18px; padding: 22px; display: flex; align-items: flex-start; gap: 18px; transition: all .2s; position: relative; overflow: hidden; }
+    .hub-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .hub-card.inactive { opacity: .55; }
+    .hub-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .hub-card.active-hub::before { background: var(--success); }
+    .hub-card.inactive-hub::before { background: var(--faint); }
+
+    .hub-icon { width: 48px; height: 48px; border-radius: 14px; background: rgba(33,150,243,0.1); display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+    .hub-info { flex: 1; min-width: 0; }
+    .hub-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 900; letter-spacing: -0.3px; margin-bottom: 3px; }
+    .hub-address { font-size: 12px; color: var(--muted); margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hub-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .chip-area   { background: var(--dark4); color: var(--muted); border: 0.5px solid var(--border2); }
+    .chip-cap    { background: rgba(33,150,243,.1); color: var(--info); border: 0.5px solid rgba(33,150,243,.2); }
+    .chip-active { background: rgba(76,175,80,.1); color: var(--success); border: 0.5px solid rgba(76,175,80,.2); }
+    .chip-off    { background: var(--dark4); color: var(--faint); border: 0.5px solid var(--border2); }
+    .chip-geo    { background: rgba(198,241,53,.06); color: #9ACD32; border: 0.5px solid rgba(198,241,53,.15); font-size: 10px; }
+
+    .hub-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+    .btn-sm { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; border: none; transition: all .15s; display: flex; align-items: center; gap: 5px; }
+    .btn-deactivate { background: rgba(255,193,7,.1); color: var(--warn); border: 1px solid rgba(255,193,7,.25); }
+    .btn-deactivate:hover { background: var(--warn); color: #000; }
+    .btn-activate { background: rgba(76,175,80,.1); color: var(--success); border: 1px solid rgba(76,175,80,.25); }
+    .btn-activate:hover { background: var(--success); color: #fff; }
+    .btn-delete { background: rgba(255,87,34,.08); color: #FF8A65; border: 1px solid rgba(255,87,34,.2); }
+    .btn-delete:hover { background: var(--brand); color: #fff; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--faint); }
+    .empty-state .e-icon { font-size: 48px; margin-bottom: 12px; opacity: .2; }
+    .empty-state p { font-size: 14px; }
+
+    @media (max-width: 1000px) { .hub-layout { grid-template-columns: 1fr; } .create-card { position: static; } }
+    @media (max-width: 768px) { body { grid-template-columns: 1fr; } .sidenav { display: none; } .main { padding: 20px; } }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="/admin/dashboard">
+    <div class="logo-mark">🍱</div>
+    <span class="logo-name">NutriDeliver</span>
+    <span class="logo-badge">Admin</span>
+  </a>
+  <div class="topbar-right">
+    <div class="avatar">A</div>
+  </div>
+</header>
+
+<nav class="sidenav">
+  <div class="nav-section-label">Overview</div>
+  <a href="/admin/dashboard" class="nav-item"><i class="nav-icon fas fa-gauge-high"></i> Dashboard</a>
+  <div class="nav-section-label">Operations</div>
+  <a href="/admin/verifications" class="nav-item"><i class="nav-icon fas fa-id-card"></i> Verifications</a>
+  <a href="/admin/hubs" class="nav-item active"><i class="nav-icon fas fa-building"></i> Hubs</a>
+  <a href="/admin/plans" class="nav-item"><i class="nav-icon fas fa-calendar-week"></i> Meal Plans</a>
+  <a href="/admin/orders" class="nav-item"><i class="nav-icon fas fa-receipt"></i> Orders</a>
+  <div class="nav-section-label">People</div>
+  <a href="/admin/students" class="nav-item"><i class="nav-icon fas fa-user-graduate"></i> Students</a>
+  <a href="/admin/cooks" class="nav-item"><i class="nav-icon fas fa-fire-burner"></i> Cooks</a>
+  <a href="/admin/riders" class="nav-item"><i class="nav-icon fas fa-motorcycle"></i> Riders</a>
+  <div class="nav-section-label">Settings</div>
+  <a href="/admin/team" class="nav-item"><i class="nav-icon fas fa-users-cog"></i> Admin Team</a>
+  <div class="sidenav-footer">
+    <form th:action="@{/logout}" method="post">
+      <button class="logout-btn" type="submit"><i class="nav-icon fas fa-power-off"></i> Logout</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-hdr">
+    <div>
+      <h1>Hub Management</h1>
+      <p>Cooking hubs where cooks check in for their shifts</p>
+    </div>
+  </div>
+
+  <div th:if="${param.msg}" class="alert alert-s">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'HubCreated'">Hub created successfully.</span>
+      <span th:case="'HubUpdated'">Hub status updated.</span>
+      <span th:case="'HubDeleted'">Hub deleted.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="alert alert-e">
+    <i class="fas fa-exclamation-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'HubHasActiveBookings'">Cannot delete — this hub has upcoming shift bookings.</span>
+      <span th:case="*" th:text="${param.error[0]}">Error.</span>
+    </span>
+  </div>
+
+  <div class="hub-layout">
+
+    <!-- CREATE FORM -->
+    <div class="create-card">
+      <div class="create-card-head">
+        <div class="create-card-title">
+          <i class="fas fa-plus" style="color:var(--brand)"></i> Add New Hub
+        </div>
+      </div>
+      <div class="create-card-body">
+        <form th:action="@{/admin/hubs/create}" method="post">
+          <div class="field">
+            <label class="field-label">Hub Name</label>
+            <input type="text" name="name" class="f-input" placeholder="e.g. Panvel North Hub" required>
+          </div>
+          <div class="field">
+            <label class="field-label">Full Address</label>
+            <input type="text" name="address" class="f-input" placeholder="Building / street / landmark" required>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label class="field-label">Area / Locality</label>
+              <input type="text" name="area" class="f-input" placeholder="Khanda Colony" required>
+            </div>
+            <div class="field">
+              <label class="field-label">City</label>
+              <input type="text" name="city" class="f-input" placeholder="Panvel" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label class="field-label">Latitude</label>
+              <input type="number" name="latitude" step="0.000001" class="f-input" placeholder="18.9270">
+            </div>
+            <div class="field">
+              <label class="field-label">Longitude</label>
+              <input type="number" name="longitude" step="0.000001" class="f-input" placeholder="72.8390">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Max Cook Capacity</label>
+            <input type="number" name="capacity" value="10" min="1" max="100" class="f-input" required>
+          </div>
+          <button type="submit" class="btn-create">
+            <i class="fas fa-building"></i> Create Hub
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- HUB LIST -->
+    <div>
+      <div class="hub-list-header">
+        <div class="hub-list-title">All Hubs</div>
+        <span class="hub-count" th:text="${#lists.size(hubs) + ' hubs'}">4 hubs</span>
+      </div>
+
+      <div class="hub-grid" th:if="${!#lists.isEmpty(hubs)}">
+        <div th:each="hub : ${hubs}"
+             class="hub-card"
+             th:classappend="${hub.active ? 'active-hub' : 'inactive inactive-hub'}">
+          <div class="hub-icon">🏢</div>
+          <div class="hub-info">
+            <div class="hub-name" th:text="${hub.name}">Hub Name</div>
+            <div class="hub-address" th:text="${hub.address}">Address</div>
+            <div class="hub-chips">
+              <span class="chip chip-area" th:text="${hub.area + ', ' + hub.city}">Area</span>
+              <span class="chip chip-cap">
+                <i class="fas fa-users" style="font-size:9px"></i>
+                <span th:text="${hub.capacity}">10</span> cooks
+              </span>
+              <span th:if="${hub.active}" class="chip chip-active">
+                <i class="fas fa-circle" style="font-size:6px"></i> Active
+              </span>
+              <span th:unless="${hub.active}" class="chip chip-off">
+                <i class="fas fa-circle" style="font-size:6px"></i> Inactive
+              </span>
+              <span th:if="${hub.latitude != null}" class="chip chip-geo">
+                <i class="fas fa-map-pin"></i>
+                <span th:text="${#numbers.formatDecimal(hub.latitude,1,4)}"></span>,
+                <span th:text="${#numbers.formatDecimal(hub.longitude,1,4)}"></span>
+              </span>
+            </div>
+          </div>
+          <div class="hub-actions">
+            <form th:action="@{'/admin/hubs/toggle/' + ${hub.id}}" method="post">
+              <button type="submit"
+                      th:class="${hub.active ? 'btn-sm btn-deactivate' : 'btn-sm btn-activate'}">
+                <i th:class="${hub.active ? 'fas fa-pause' : 'fas fa-play'}"></i>
+                <span th:text="${hub.active ? 'Pause' : 'Activate'}">Toggle</span>
+              </button>
+            </form>
+            <form th:action="@{'/admin/hubs/delete/' + ${hub.id}}" method="post"
+                  onsubmit="return confirm('Delete this hub permanently?')">
+              <button type="submit" class="btn-sm btn-delete">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${#lists.isEmpty(hubs)}" class="empty-state">
+        <div class="e-icon"><i class="fas fa-building"></i></div>
+        <p>No hubs yet. Create your first hub on the left.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Plans — NutriDeliver Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand:    #FF5722;
+      --brand2:   #FF7043;
+      --dark:     #0B0C0B;
+      --dark2:    #111311;
+      --dark3:    #171A17;
+      --dark4:    #1D211D;
+      --dark5:    #232823;
+      --border:   rgba(255,255,255,0.065);
+      --border2:  rgba(255,255,255,0.11);
+      --text:     #EEF0ED;
+      --muted:    #7A8A7A;
+      --faint:    #3D4A3D;
+      --green:    #3DDC7C;
+      --red:      #FF5A5A;
+      --amber:    #F5A623;
+      --blue:     #4D9CFF;
+      --cyan:     #22D3EE;
+      --lime:     #C6F135;
+      --r:        13px;
+      --r-sm:     8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13.5px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 58px 1fr;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(rgba(255,87,34,.04) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    /* ── TOPBAR & SIDEBAR ── */
+    .topbar { grid-column: 1 / -1; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; padding: 0 20px; gap: 12px; background: rgba(11,12,11,0.94); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); }
+    .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; margin-right: 8px; }
+    .logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; font-size: 15px; color: #fff; flex-shrink: 0; }
+    .logo-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 900; color: var(--text); letter-spacing: -0.4px; }
+    .logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brand); display: block; line-height: 1; margin-top: 1px; }
+    .topbar-divider { width: 1px; height: 24px; background: var(--border2); }
+    .tb-btn { height: 30px; padding: 0 12px; border-radius: var(--r-sm); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border2); background: var(--dark3); color: var(--muted); text-decoration: none; cursor: pointer; transition: all .18s; white-space: nowrap; }
+    .tb-btn:hover { background: var(--dark4); color: var(--text); }
+    .tb-btn.warn { border-color: rgba(245,166,35,.3); color: var(--amber); }
+    .tb-btn.info { border-color: rgba(77,156,255,.3); color: var(--blue); }
+    .role-pill { height: 26px; padding: 0 11px; border-radius: 50px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
+    .rp-super  { background: rgba(255,90,90,.1); color: #FF8A65; border: 1px solid rgba(255,90,90,.25); }
+    .rp-hub    { background: rgba(77,156,255,.1); color: #82BAFF; border: 1px solid rgba(77,156,255,.25); }
+    .rp-viewer { background: rgba(122,138,122,.1); color: var(--muted); border: 1px solid var(--border2); }
+    .admin-name { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .logout-btn { height: 30px; padding: 0 12px; border-radius: var(--r-sm); background: none; border: 1px solid var(--border2); color: var(--faint); font-size: 12px; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 5px; }
+    .logout-btn:hover { border-color: var(--red); color: #FF8A65; }
+
+    .sidenav { background: var(--dark2); border-right: 1px solid var(--border); padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; overflow-y: auto; }
+    .nav-section { font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); padding: 0 8px; margin: 14px 0 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--r); text-decoration: none; font-size: 12.5px; font-weight: 600; color: var(--muted); transition: all .15s; }
+    .nav-item:hover { background: var(--dark3); color: var(--text); }
+    .nav-item.active { background: rgba(255,87,34,.1); color: var(--brand); }
+    .nav-item .ni { width: 16px; text-align: center; font-size: 13px; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; font-size: 9.5px; font-weight: 800; background: var(--brand); color: #fff; padding: 1px 6px; border-radius: 20px; }
+    .nav-badge.amber { background: var(--amber); color: #000; }
+    .sidenav-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+    .sidenav-foot .logout-btn { width: 100%; justify-content: flex-start; border-radius: var(--r); height: 36px; padding: 0 10px; }
+
+    /* ── MAIN & COMPONENTS ── */
+    .main { position: relative; z-index: 1; overflow-y: auto; padding: 28px 28px 60px; }
+    
+    .strip { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+    .strip-ok { background: rgba(61,220,124,.07); border: 1px solid rgba(61,220,124,.2); color: #6EEEA7; }
+    .strip-err { background: rgba(255,90,90,.07); border: 1px solid rgba(255,90,90,.2); color: #FF8A65; }
+    .strip-warn { background: rgba(245,166,35,.07); border: 1px solid rgba(245,166,35,.2); color: #FFC66D; }
+
+    .sec-label { display: flex; align-items: center; gap: 8px; font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .sec-divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+    /* ── LAYOUTS ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1.65fr; gap: 18px; align-items: start; }
+    .three-col { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+
+    /* ── CARDS ── */
+    .card { background: var(--dark2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--dark3); border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+
+    /* ── PLAN GRID ── */
+    .plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; padding: 14px; }
+    .plan-item { background: var(--dark4); border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: var(--r); padding: 16px; transition: transform .15s; }
+    .plan-item.active-plan { border-left-color: var(--green); background: rgba(61,220,124,.03); border: 1px solid rgba(61,220,124,.3); border-left: 3px solid var(--green); }
+    .plan-item.inactive { border-left-color: var(--faint); opacity: .6; }
+    .plan-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; margin-bottom: 4px; color: var(--text); }
+    .plan-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; min-height: 36px; }
+    .plan-price { font-size: 18px; font-weight: 800; color: var(--brand); margin-bottom: 12px; font-family: 'Fraunces', serif; }
+    .plan-btns { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+
+    /* ── FORMS ── */
+    .form-panel { background: var(--dark2); border: 1px solid rgba(34,211,238,.25); border-radius: 16px; overflow: hidden; }
+    .form-panel.editing { border-color: var(--amber); }
+    .form-panel-head { padding: 13px 18px; background: rgba(34,211,238,.04); border-bottom: 1px solid rgba(34,211,238,.12); display: flex; align-items: center; justify-content: space-between; }
+    .form-panel.editing .form-panel-head { background: rgba(245,166,35,.05); border-bottom-color: rgba(245,166,35,.2); }
+    .form-panel-title { font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    .form-body { padding: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .field.no-mb { margin-bottom: 0; }
+    .flbl { font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); }
+    .f-inp, .f-sel { width: 100%; background: var(--dark4); border: 1.5px solid var(--border2); border-radius: var(--r-sm); padding: 9px 12px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; transition: border-color .18s; }
+    .f-inp:focus, .f-sel:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,87,34,.1); }
+    .f-file { padding: 7px 10px; cursor: pointer; }
+    .f-hint { font-size: 10px; color: var(--faint); margin-top: 3px; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--r-sm); font-size: 12px; font-weight: 700; cursor: pointer; border: none; font-family: 'Plus Jakarta Sans', sans-serif; transition: all .15s; }
+    .btn-full { width: 100%; justify-content: center; padding: 10px 14px; border-radius: var(--r); }
+    .btn-brand { background: var(--brand); color: #fff; }
+    .btn-brand:hover { opacity: .88; }
+    .btn-green { background: var(--green); color: #0A1A0F; }
+    .btn-green:hover { filter: brightness(1.1); }
+    .btn-cyan  { background: rgba(34,211,238,.12); color: var(--cyan); border: 1px solid rgba(34,211,238,.3); }
+    .btn-cyan:hover { background: var(--cyan); color: #000; }
+    .btn-amber { background: var(--amber); color: #000; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn-ghost-danger { background: transparent; border: 1px solid rgba(255,90,90,.3); color: #FF8A65; }
+    .btn-ghost-danger:hover { background: rgba(255,90,90,.1); }
+    .btn-ghost-ok  { background: transparent; border: 1px solid rgba(61,220,124,.3); color: var(--green); }
+    .btn-ghost-ok:hover { background: rgba(61,220,124,.1); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 5px; font-size: 10.5px; font-weight: 700; }
+    .bg-green   { background: rgba(61,220,124,.1);  color: var(--green); border: .5px solid rgba(61,220,124,.25); }
+    .bg-red     { background: rgba(255,90,90,.1);   color: #FF8A65; border: .5px solid rgba(255,90,90,.25); }
+    .bg-outline { background: transparent; border: .5px solid var(--border2); color: var(--muted); }
+
+    /* ── MENU TABS & TABLE ── */
+    .menu-tabs { display: flex; background: var(--dark3); border-bottom: 1px solid var(--border); }
+    .menu-tab { padding: 12px 20px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--faint); border-bottom: 2px solid transparent; transition: all .18s; }
+    .menu-tab:hover { color: var(--muted); }
+    .menu-tab.active.veg { color: var(--green); border-bottom-color: var(--green); background: rgba(61,220,124,.03); }
+    .menu-tab.active.nveg { color: var(--red); border-bottom-color: var(--red); background: rgba(255,90,90,.03); }
+
+    .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .tbl thead tr { background: var(--dark3); }
+    .tbl thead th { padding: 10px 16px; font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--border); white-space: nowrap; text-align: left; }
+    .tbl tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+    .tbl tbody tr:hover { background: var(--dark3); }
+    .tbl tbody tr:last-child { border-bottom: none; }
+    .tbl td { padding: 12px 16px; color: var(--muted); vertical-align: middle; }
+    .tbl td strong { color: var(--text); }
+    .tbl .empty td { text-align: center; padding: 40px; color: var(--faint); }
+    
+    .thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border2); }
+    .thumb-empty { width: 40px; height: 40px; border-radius: 8px; background: var(--dark5); border: 1px solid var(--border2); display: grid; place-items: center; color: var(--faint); font-size: 14px; }
+    
+    @keyframes glowOn { 0% { border-color: rgba(245,166,35,.25); } 50% { box-shadow: 0 0 20px rgba(245,166,35,.15); border-color: var(--amber); } 100% { border-color: var(--amber); } }
+    .glow-anim { animation: glowOn 1s ease forwards; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="/admin/dashboard">
+    <div class="logo-mark">🍱</div>
+    <div>
+      <span class="logo-name">NutriDeliver</span>
+      <span class="logo-sub">Ops Control</span>
+    </div>
+  </a>
+  <div class="topbar-divider"></div>
+  <a href="/admin/verifications" class="tb-btn warn" th:if="${isSuperAdmin}"><i class="fas fa-id-card"></i> Verifications</a>
+  <a href="/admin/team" class="tb-btn info" th:if="${isSuperAdmin}"><i class="fas fa-users-cog"></i> Team</a>
+
+  <div class="topbar-right">
+    <span th:if="${adminRole == 'SUPER_ADMIN'}" class="role-pill rp-super"><i class="fas fa-crown"></i> Super Admin</span>
+    <span th:if="${adminRole == 'HUB_MANAGER'}" class="role-pill rp-hub"><i class="fas fa-building"></i> Hub Manager</span>
+    <span th:if="${adminRole == 'VIEWER'}" class="role-pill rp-viewer"><i class="fas fa-eye"></i> Viewer</span>
+    <span class="admin-name" th:text="${adminUser != null ? adminUser.fullName : 'Admin'}">Admin</span>
+    <form th:action="@{/logout}" method="post">
+      <button class="logout-btn" type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </form>
+  </div>
+</header>
+
+<nav class="sidenav">
+  <div class="nav-section">Overview</div>
+  <a href="/admin/dashboard" class="nav-item"><i class="ni fas fa-gauge-high"></i> Dashboard</a>
+
+  <div class="nav-section">Operations</div>
+  <a href="/admin/verifications" class="nav-item">
+    <i class="ni fas fa-id-card"></i> Verifications
+    <span class="nav-badge amber" th:text="${pendingVerifications != null ? pendingVerifications : 0}">0</span>
+  </a>
+  <a href="/admin/hubs" class="nav-item"><i class="ni fas fa-building"></i> Hubs</a>
+  <a href="/admin/plans" class="nav-item active"><i class="ni fas fa-calendar-week"></i> Meal Plans</a>
+  <a href="/admin/orders" class="nav-item"><i class="ni fas fa-receipt"></i> Orders</a>
+
+  <div class="nav-section">People</div>
+  <a href="/admin/students" class="nav-item"><i class="ni fas fa-user-graduate"></i> Students</a>
+  <a href="/admin/cooks" class="nav-item"><i class="ni fas fa-fire-burner"></i> Cooks</a>
+  <a href="/admin/riders" class="nav-item"><i class="ni fas fa-motorcycle"></i> Riders</a>
+
+  <div class="nav-section">Admin</div>
+  <a href="/admin/team" class="nav-item"><i class="ni fas fa-users-cog"></i> Team</a>
+
+  <div class="sidenav-foot">
+    <form th:action="@{/logout}" method="post">
+      <button class="logout-btn" type="submit"><i class="fas fa-power-off" style="width:16px;text-align:center"></i> Logout</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+
+  <div th:if="${param.msg}" class="strip strip-ok">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'PlanCreated'">New Meal Plan created successfully.</span>
+      <span th:case="'PlanActivated'">Meal Plan is now active for students!</span>
+      <span th:case="'PlanDeleted'">Meal Plan deleted permanently.</span>
+      <span th:case="'MenuUpdated'">Menu timetable updated successfully.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="strip strip-err">
+    <i class="fas fa-exclamation-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'AccessDenied'">You don't have permission to perform that action.</span>
+      <span th:case="'FileUploadFailed'">Failed to upload meal image.</span>
+      <span th:case="*" th:text="${param.error[0]}">Error occurred.</span>
+    </span>
+  </div>
+
+  <div class="sec-label"><i class="fas fa-layer-group"></i> Manage Subscription Plans</div>
+  <div class="two-col" style="margin-bottom:28px">
+
+    <div th:if="${isSuperAdmin}" class="form-panel" style="border-color: rgba(34,211,238,.25)">
+      <div class="form-panel-head" style="background: rgba(34,211,238,.04); border-bottom-color: rgba(34,211,238,.12)">
+        <div class="form-panel-title" style="color:var(--cyan)"><i class="fas fa-plus-circle"></i> Create New Plan</div>
+      </div>
+      <div class="form-body">
+        <form th:action="@{/admin/plans/create}" method="post">
+          <div class="field"><label class="flbl">Plan Name</label>
+            <input type="text" name="name" class="f-inp" placeholder="e.g. Monthly Standard" required>
+          </div>
+          <div class="field"><label class="flbl">Short Description</label>
+            <input type="text" name="description" class="f-inp" placeholder="30 meals, valid for 40 days">
+          </div>
+          <div class="field"><label class="flbl">Price (₹)</label>
+            <input type="number" step="0.01" name="price" class="f-inp" placeholder="e.g. 2500" required>
+          </div>
+          <div style="margin-top:16px">
+            <button type="submit" class="btn btn-cyan btn-full"><i class="fas fa-layer-group"></i> Save Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fas fa-tags" style="color:var(--brand)"></i> Available Plans</div>
+        <span class="badge bg-outline" th:text="${allPlans != null ? #lists.size(allPlans) + ' plans' : '0 plans'}"></span>
+      </div>
+      
+      <div th:if="${allPlans == null or #lists.isEmpty(allPlans)}" style="text-align:center;padding:50px;color:var(--faint)">
+        <i class="fas fa-box-open" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:12px"></i>
+        <p style="font-size:14px">No meal plans exist. Create one to get started.</p>
+      </div>
+
+      <div th:unless="${allPlans == null or #lists.isEmpty(allPlans)}" class="plan-grid">
+        <div th:each="plan : ${allPlans}" class="plan-item" th:classappend="${plan.active ? 'active-plan' : 'inactive'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="plan-name" th:text="${plan.name}">Plan Name</div>
+            <span th:if="${plan.active}" class="badge bg-green" style="font-size:9px"><i class="fas fa-check-circle"></i> ACTIVE</span>
+          </div>
+          <div class="plan-price" th:text="'₹' + ${plan.price != null ? plan.price : '0.0'}">₹0.0</div>
+          <div class="plan-desc" th:text="${plan.description}">Description goes here...</div>
+          
+          <div class="plan-btns" th:if="${isSuperAdmin}">
+            <form th:unless="${plan.active}" th:action="@{'/admin/plans/activate/' + ${plan.id}}" method="post" style="flex:1">
+              <button type="submit" class="btn btn-ghost-ok btn-full" style="padding:6px;font-size:11px"><i class="fas fa-play"></i> Make Active</button>
+            </form>
+            <span th:if="${plan.active}" style="font-size:11px;color:var(--green);font-weight:700;flex:1;text-align:center">Currently Live</span>
+            
+            <form th:action="@{'/admin/plans/delete/' + ${plan.id}}" method="post" onsubmit="return confirm('Delete this plan permanently?')">
+              <button type="submit" class="btn btn-ghost-danger" style="padding:6px 10px;font-size:11px" title="Delete Plan">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-divider"></div>
+
+  <div class="sec-label"><i class="fas fa-calendar-week"></i> Menu Configuration</div>
+  
+  <div class="three-col" style="margin-bottom:28px">
+
+    <div class="form-panel" id="menuFormCard">
+      <div class="form-panel-head">
+        <div class="form-panel-title" id="formTitle" style="color:var(--green)">
+          <i class="fas fa-calendar-plus"></i> Set Weekly Timetable
+        </div>
+        <button type="button" class="btn btn-ghost" id="resetBtn" onclick="resetMenuForm()" style="display:none;font-size:11px;padding:4px 10px">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+      </div>
+      <div class="form-body">
+        
+        <div th:unless="${activePlan != null}" class="strip strip-warn" style="margin-bottom:16px;font-size:11.5px">
+          <i class="fas fa-exclamation-triangle"></i> You must have an Active Plan to set the menu.
+        </div>
+
+        <form th:action="@{/admin/menu/update}" method="post" enctype="multipart/form-data" id="mealForm">
+          <input type="hidden" name="planId" th:if="${activePlan != null}" th:value="${activePlan.id}">
+          
+          <div class="form-row">
+            <div class="field no-mb"><label class="flbl">Day of Week</label>
+              <select name="dayOfWeek" id="inDay" class="f-sel" required>
+                <option value="MONDAY">Monday</option><option value="TUESDAY">Tuesday</option>
+                <option value="WEDNESDAY">Wednesday</option><option value="THURSDAY">Thursday</option>
+                <option value="FRIDAY">Friday</option><option value="SATURDAY">Saturday</option>
+                <option value="SUNDAY">Sunday</option>
+              </select>
+            </div>
+            <div class="field no-mb"><label class="flbl">Meal Slot</label>
+              <select name="mealType" id="inSlot" class="f-sel" required>
+                <option value="BREAKFAST">Breakfast</option>
+                <option value="LUNCH">Lunch</option>
+                <option value="DINNER">Dinner</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:12px"></div>
+          
+          <div class="field"><label class="flbl">Diet Category</label>
+            <select name="mealCategory" id="inCategory" class="f-sel" required>
+              <option value="Pure Veg">🥦 Pure Veg (Green Station)</option>
+              <option value="Non-Veg">🍗 Non-Veg (Red Station)</option>
+            </select>
+          </div>
+          
+          <div class="field"><label class="flbl">Food Items</label>
+            <input type="text" name="items" id="inItems" class="f-inp" placeholder="e.g. Dal Makhani, Jeera Rice, 2 Roti" required>
+          </div>
+          
+          <div class="field"><label class="flbl">Meal Image</label>
+            <input type="file" name="imageFile" id="inImage" class="f-inp f-file" accept="image/png,image/jpeg">
+            <div class="f-hint" id="imageHint">Leave blank to keep existing image.</div>
+          </div>
+          
+          <div class="form-row">
+            <div class="field no-mb"><label class="flbl">Calories</label>
+              <input type="number" name="calories" id="inCal" class="f-inp" placeholder="e.g. 450" required></div>
+            <div class="field no-mb"><label class="flbl">Protein (g)</label>
+              <input type="number" name="protein" id="inPro" class="f-inp" placeholder="e.g. 24" required></div>
+          </div>
+          
+          <div style="margin-top:20px">
+            <button type="submit" class="btn btn-green btn-full" id="saveBtn" th:disabled="${activePlan == null or isViewer}">
+              <i class="fas fa-save"></i>
+              <span th:text="${isViewer ? 'View Only' : 'Save Menu to Timetable'}">Save</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="menu-tabs">
+        <button class="menu-tab veg active" id="tab-veg" onclick="switchMenuTab('veg')"><i class="fas fa-leaf"></i> &nbsp;Pure Veg Timetable</button>
+        <button class="menu-tab nveg" id="tab-nveg" onclick="switchMenuTab('nveg')"><i class="fas fa-drumstick-bite"></i> &nbsp;Non-Veg Timetable</button>
+      </div>
+      
+      <div id="panel-veg" style="overflow-y:auto; max-height:540px">
+        <table class="tbl">
+          <thead><tr>
+            <th style="width:48px">Pic</th><th>Day</th><th>Slot</th><th>Items</th><th>Nutrition</th><th style="text-align:center">Edit</th>
+          </tr></thead>
+          <tbody>
+            <tr th:each="menu : ${vegMenu}">
+              <td>
+                <img th:if="${menu.imageUrl != null}" th:src="${menu.imageUrl}" class="thumb" alt="Meal">
+                <div th:unless="${menu.imageUrl != null}" class="thumb-empty"><i class="fas fa-utensils"></i></div>
+              </td>
+              <td><strong style="color:var(--green)" th:text="${menu.dayOfWeek}">MON</strong></td>
+              <td><span class="badge bg-outline" th:text="${menu.mealType}">LUNCH</span></td>
+              <td>
+                <strong th:text="${menu.items}">Items</strong>
+              </td>
+              <td style="white-space:nowrap">
+                <span th:text="${menu.calories}" style="font-weight:700;color:var(--text)">0</span><span style="color:var(--faint);font-size:11px"> kcal</span>
+                <span style="color:var(--green);font-weight:800" th:text="' · ' + ${menu.protein} + 'g'"></span>
+              </td>
+              <td style="text-align:center">
+                <button type="button" class="btn btn-ghost edit-btn" style="padding:5px 10px;font-size:11px"
+                        th:data-day="${menu.dayOfWeek}" th:data-slot="${menu.mealType}"
+                        th:data-category="${menu.mealCategory}" th:data-items="${menu.items}"
+                        th:data-cal="${menu.calories}" th:data-pro="${menu.protein}">
+                  <i class="fas fa-pencil-alt"></i>
+                </button>
+              </td>
+            </tr>
+            <tr th:if="${vegMenu == null or #lists.isEmpty(vegMenu)}" class="empty">
+              <td colspan="6">
+                <i class="fas fa-leaf" style="font-size:24px;margin-bottom:8px;display:block;opacity:0.3"></i>
+                No Pure Veg meals configured for the active plan.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="panel-nveg" style="overflow-y:auto; max-height:540px; display:none">
+        <table class="tbl">
+          <thead><tr>
+            <th style="width:48px">Pic</th><th>Day</th><th>Slot</th><th>Items</th><th>Nutrition</th><th style="text-align:center">Edit</th>
+          </tr></thead>
+          <tbody>
+            <tr th:each="menu : ${nonVegMenu}">
+              <td>
+                <img th:if="${menu.imageUrl != null}" th:src="${menu.imageUrl}" class="thumb" alt="Meal">
+                <div th:unless="${menu.imageUrl != null}" class="thumb-empty"><i class="fas fa-utensils"></i></div>
+              </td>
+              <td><strong style="color:var(--red)" th:text="${menu.dayOfWeek}">MON</strong></td>
+              <td><span class="badge bg-outline" th:text="${menu.mealType}">LUNCH</span></td>
+              <td>
+                <strong th:text="${menu.items}">Items</strong>
+              </td>
+              <td style="white-space:nowrap">
+                <span th:text="${menu.calories}" style="font-weight:700;color:var(--text)">0</span><span style="color:var(--faint);font-size:11px"> kcal</span>
+                <span style="color:var(--red);font-weight:800" th:text="' · ' + ${menu.protein} + 'g'"></span>
+              </td>
+              <td style="text-align:center">
+                <button type="button" class="btn btn-ghost edit-btn" style="padding:5px 10px;font-size:11px"
+                        th:data-day="${menu.dayOfWeek}" th:data-slot="${menu.mealType}"
+                        th:data-category="${menu.mealCategory}" th:data-items="${menu.items}"
+                        th:data-cal="${menu.calories}" th:data-pro="${menu.protein}">
+                  <i class="fas fa-pencil-alt"></i>
+                </button>
+              </td>
+            </tr>
+            <tr th:if="${nonVegMenu == null or #lists.isEmpty(nonVegMenu)}" class="empty">
+              <td colspan="6">
+                <i class="fas fa-drumstick-bite" style="font-size:24px;margin-bottom:8px;display:block;opacity:0.3"></i>
+                No Non-Veg meals configured for the active plan.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Clean up URL parameters
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg') || url.searchParams.has('error')) {
+      url.searchParams.delete('msg'); url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.href);
+    }
+  }
+
+  // Switch between Veg / Non-Veg Timetable Tabs
+  function switchMenuTab(tab) {
+    const vp = document.getElementById('panel-veg');
+    const np = document.getElementById('panel-nveg');
+    const vt = document.getElementById('tab-veg');
+    const nt = document.getElementById('tab-nveg');
+    
+    if (tab === 'veg') {
+      vp.style.display = 'block'; 
+      np.style.display = 'none';
+      vt.classList.add('active'); 
+      nt.classList.remove('active');
+    } else {
+      vp.style.display = 'none'; 
+      np.style.display = 'block';
+      vt.classList.remove('active'); 
+      nt.classList.add('active');
+    }
+  }
+
+  // Edit Button Logic -> Populates the form
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.getElementById('inDay').value      = this.dataset.day;
+        document.getElementById('inSlot').value     = this.dataset.slot;
+        document.getElementById('inCategory').value = this.dataset.category;
+        document.getElementById('inItems').value    = this.dataset.items;
+        document.getElementById('inCal').value      = this.dataset.cal;
+        document.getElementById('inPro').value      = this.dataset.pro;
+
+        const card  = document.getElementById('menuFormCard');
+        const title = document.getElementById('formTitle');
+        
+        title.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit Timetable Entry';
+        title.style.color = 'var(--amber)';
+        card.classList.add('editing');
+        
+        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> Update Entry';
+        document.getElementById('saveBtn').className = 'btn btn-amber btn-full';
+        document.getElementById('resetBtn').style.display = '';
+        document.getElementById('imageHint').textContent = 'New image replaces old. Leave blank to keep existing.';
+
+        card.classList.remove('glow-anim');
+        void card.offsetWidth; // trigger reflow
+        card.classList.add('glow-anim');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  });
+
+  // Reset Form Logic
+  function resetMenuForm() {
+    document.getElementById('mealForm').reset();
+    const card  = document.getElementById('menuFormCard');
+    const title = document.getElementById('formTitle');
+    
+    title.innerHTML = '<i class="fas fa-calendar-plus"></i> Set Weekly Timetable';
+    title.style.color = 'var(--green)';
+    card.classList.remove('editing', 'glow-anim');
+    
+    document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> Save Menu to Timetable';
+    document.getElementById('saveBtn').className = 'btn btn-green btn-full';
+    document.getElementById('resetBtn').style.display = 'none';
+    document.getElementById('imageHint').textContent = 'Leave blank to keep existing image.';
+  }
+</script>
+</body>
+</html>

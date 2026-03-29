@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Account — NutriDeliver</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand:   #FF5722;
+      --brand2:  #FF7043;
+      --lime:    #C6F135;
+      --dark:    #0F0F0F;
+      --dark2:   #161616;
+      --dark3:   #1E1E1E;
+      --dark4:   #242424;
+      --border:  rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --text:    #F5F0EB;
+      --muted:   #888;
+      --faint:   #444;
+      --success: #4CAF50;
+      --warn:    #FFC107;
+      --r: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 62px;
+      background: rgba(15,15,15,0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 34px; height: 34px; background: var(--brand); border-radius: 10px; display: grid; place-items: center; font-size: 16px; color: #fff; }
+    .logo-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: -0.5px; }
+    .logout-btn {
+      padding: 7px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      background: none; border: 1px solid var(--border2);
+      color: var(--muted); cursor: pointer;
+      font-family: inherit; transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .logout-btn:hover { background: var(--dark3); color: var(--text); }
+
+    /* PAGE */
+    .page { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .page-head { margin-bottom: 36px; }
+    .page-head h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 32px; font-weight: 900;
+      letter-spacing: -1px; line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .page-head p { font-size: 14px; color: var(--muted); }
+
+    /* STATUS BANNERS */
+    .status-banner {
+      border-radius: 20px; padding: 28px 32px;
+      margin-bottom: 32px; text-align: center;
+    }
+    .banner-not-submitted { background: var(--dark2); border: 1px solid var(--border2); }
+    .banner-pending  { background: rgba(255,193,7,.06); border: 1px solid rgba(255,193,7,.25); }
+    .banner-approved { background: rgba(76,175,80,.06); border: 1px solid rgba(76,175,80,.25); }
+    .banner-rejected { background: rgba(255,87,34,.06); border: 1px solid rgba(255,87,34,.25); }
+
+    .banner-icon { font-size: 52px; margin-bottom: 14px; }
+    .banner-title {
+      font-family: 'Fraunces', serif;
+      font-size: 24px; font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .banner-sub { font-size: 14px; opacity: .8; color: var(--muted); line-height: 1.6; }
+
+    .btn-go {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 18px; padding: 12px 24px;
+      border-radius: 12px;
+      background: var(--success); color: #fff;
+      font-size: 14px; font-weight: 800;
+      text-decoration: none; font-family: inherit;
+      transition: all .2s; border: none; cursor: pointer;
+    }
+    .btn-go:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ALERTS */
+    .alert {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; margin-bottom: 20px;
+    }
+    .alert-s { background: rgba(76,175,80,.1); color: #81C784; border: 1px solid rgba(76,175,80,.3); }
+    .alert-e { background: rgba(255,87,34,.1); color: #FF8A65; border: 1px solid rgba(255,87,34,.3); }
+    .alert-w { background: rgba(255,193,7,.1); color: var(--warn); border: 1px solid rgba(255,193,7,.3); }
+    .dev-box { background: rgba(255,193,7,.08); color: var(--warn); border: 1px solid rgba(255,193,7,.2); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    /* PROGRESS TRACK */
+    .progress-track {
+      display: flex; align-items: center;
+      margin-bottom: 36px;
+      position: relative;
+    }
+    .progress-track::before {
+      content: '';
+      position: absolute;
+      top: 18px; left: 18px; right: 18px;
+      height: 2px;
+      background: var(--border2);
+      z-index: 0;
+    }
+    .pt-step {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      position: relative; z-index: 1;
+    }
+    .pt-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 14px;
+      background: var(--dark3);
+      border: 2px solid var(--border2);
+      color: var(--faint);
+      transition: all .3s;
+    }
+    .pt-step.done .pt-circle { background: var(--success); border-color: var(--success); color: #fff; }
+    .pt-step.active .pt-circle { border-color: var(--brand); color: var(--brand); background: rgba(255,87,34,0.1); }
+    .pt-label { font-size: 11px; font-weight: 700; color: var(--faint); }
+    .pt-step.done .pt-label, .pt-step.active .pt-label { color: var(--text); }
+
+    /* STEP CARDS */
+    .step-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .step-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--dark3);
+    }
+    .step-card-title {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 16px; font-weight: 800;
+    }
+    .step-num-badge {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 800;
+      background: var(--brand); color: #fff;
+    }
+    .step-num-badge.done { background: var(--success); }
+    .step-num-badge.locked { background: var(--dark4); color: var(--faint); }
+    .verified-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 700;
+      padding: 4px 12px; border-radius: 50px;
+      background: rgba(76,175,80,.1); color: var(--success);
+      border: 1px solid rgba(76,175,80,.3);
+    }
+    .step-card-body { padding: 24px; }
+    .step-card.locked .step-card-body { opacity: .4; pointer-events: none; }
+
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 18px; }
+    .step-desc strong { color: var(--text); }
+
+    /* Form inside step */
+    .field { margin-bottom: 18px; }
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--faint); margin-bottom: 8px;
+    }
+    .field-hint { font-size: 11px; color: var(--faint); margin-top: 5px; }
+    .f-input, .f-select {
+      width: 100%;
+      background: var(--dark4);
+      border: 1.5px solid var(--border2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .f-input:focus, .f-select:focus {
+      outline: none; border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(255,87,34,0.1);
+    }
+    .f-input::placeholder { color: var(--faint); }
+    .f-select { appearance: none; cursor: pointer; }
+
+    /* OTP input */
+    .otp-wrap { display: flex; gap: 10px; }
+    .otp-input {
+      flex: 1;
+      background: var(--dark4);
+      border: 2px solid var(--border2);
+      border-radius: 14px;
+      padding: 16px;
+      color: var(--text);
+      font-family: 'Fraunces', serif;
+      font-size: 28px; font-weight: 900;
+      text-align: center;
+      letter-spacing: 8px;
+      transition: border-color .2s;
+    }
+    .otp-input:focus { outline: none; border-color: var(--brand); }
+
+    /* File input */
+    .file-field {
+      background: var(--dark4);
+      border: 2px dashed var(--border2);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .file-field:hover { border-color: var(--brand); background: rgba(255,87,34,0.04); }
+    .file-field input { display: none; }
+    .file-field .file-icon { font-size: 24px; color: var(--faint); margin-bottom: 8px; }
+    .file-field .file-text { font-size: 13px; color: var(--muted); }
+    .file-field .file-text strong { color: var(--brand); }
+
+    .upload-preview {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--dark4); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+    .upload-preview img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
+    .upload-preview .up-text .up-label { font-size: 11px; color: var(--faint); }
+    .upload-preview .up-text .up-name { font-size: 13px; font-weight: 700; margin-top: 2px; }
+    .uploaded-badge {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      background: rgba(76,175,80,.1); color: var(--success);
+      border: 1px solid rgba(76,175,80,.3);
+    }
+
+    /* Buttons */
+    .btn-send {
+      width: 100%; padding: 12px;
+      border-radius: 12px;
+      font-size: 14px; font-weight: 800;
+      background: var(--dark4); color: var(--text);
+      border: 1.5px solid var(--border2);
+      cursor: pointer; font-family: inherit;
+      transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn-send:hover { border-color: var(--brand); color: var(--brand); background: rgba(255,87,34,0.06); }
+    .btn-verify {
+      width: 100%; padding: 13px;
+      border-radius: 12px;
+      font-size: 14px; font-weight: 800;
+      background: var(--brand); color: #fff;
+      border: none; cursor: pointer;
+      font-family: inherit; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-verify:hover { background: var(--brand2); transform: translateY(-1px); }
+    .btn-upload {
+      width: 100%; padding: 13px;
+      border-radius: 12px;
+      font-size: 14px; font-weight: 800;
+      background: var(--brand); color: #fff;
+      border: none; cursor: pointer;
+      font-family: inherit; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-upload:hover { background: var(--brand2); transform: translateY(-1px); }
+    .btn-upload:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .pending-notice {
+      text-align: center; padding: 20px;
+      color: var(--warn); font-size: 13px; font-weight: 700;
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 32px 16px; }
+      .otp-input { letter-spacing: 4px; font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-mark">🍱</div>
+    <span class="logo-name">NutriDeliver</span>
+  </a>
+  <form th:action="@{/logout}" method="post" style="margin:0">
+    <button class="logout-btn" type="submit">
+      <i class="fas fa-power-off"></i> Logout
+    </button>
+  </form>
+</nav>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-head">
+    <h1>Account Verification</h1>
+    <p>Complete these steps to activate your account and start working</p>
+  </div>
+
+  <!-- ALERTS -->
+  <div th:if="${param.msg}" class="alert alert-s">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'OTPSent'">OTP sent to your mobile number!</span>
+      <span th:case="'MobileVerified'">Mobile number verified successfully ✓</span>
+      <span th:case="'DocsSubmitted'">Documents submitted! Admin will review within 24 hours.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="alert alert-e">
+    <i class="fas fa-exclamation-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'InvalidOTP'">Incorrect OTP. Please try again.</span>
+      <span th:case="'MobileNotVerified'">Please verify your mobile number first.</span>
+      <span th:case="*" th:text="${param.error[0]}">Something went wrong.</span>
+    </span>
+  </div>
+  <div th:if="${param.devOtp}" class="dev-box">
+    <i class="fas fa-flask"></i>
+    Dev Mode — OTP: <strong th:text="${param.devOtp[0]}">000000</strong>
+  </div>
+
+  <!-- STATUS BANNERS -->
+  <div th:if="${status != null}">
+    <div th:if="${status.name() == 'PENDING'}" class="status-banner banner-pending">
+      <div class="banner-icon">⏳</div>
+      <div class="banner-title" style="color:var(--warn)">Under Review</div>
+      <div class="banner-sub">Our team is reviewing your documents. You'll hear back within 24 hours.</div>
+    </div>
+    <div th:if="${status.name() == 'APPROVED'}" class="status-banner banner-approved">
+      <div class="banner-icon">✅</div>
+      <div class="banner-title" style="color:var(--success)">Verified &amp; Active!</div>
+      <div class="banner-sub">Your account is fully verified. Go to your dashboard to get started.</div>
+      <a th:if="${user.role.name() == 'COOK'}" href="/cook/dashboard" class="btn-go">
+        <i class="fas fa-arrow-right"></i> Go to Dashboard
+      </a>
+      <a th:if="${user.role.name() == 'DELIVERY_PARTNER'}" href="/delivery/schedule" class="btn-go">
+        <i class="fas fa-arrow-right"></i> Go to Dashboard
+      </a>
+    </div>
+    <div th:if="${status.name() == 'REJECTED'}" class="status-banner banner-rejected">
+      <div class="banner-icon">❌</div>
+      <div class="banner-title" style="color:#FF8A65">Verification Rejected</div>
+      <div class="banner-sub"
+           th:text="${doc != null and doc.rejectionReason != null ? doc.rejectionReason : 'Your documents did not meet our requirements. Please resubmit.'}">
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS TRACK (not shown when approved) -->
+  <div th:unless="${status != null and status.name() == 'APPROVED'}">
+
+    <div class="progress-track">
+      <div class="pt-step" th:classappend="${doc != null and doc.mobileVerified ? 'done' : 'active'}">
+        <div class="pt-circle">
+          <i th:if="${doc != null and doc.mobileVerified}" class="fas fa-check"></i>
+          <i th:unless="${doc != null and doc.mobileVerified}" class="fas fa-mobile-alt"></i>
+        </div>
+        <div class="pt-label">Mobile OTP</div>
+      </div>
+      <div class="pt-step"
+           th:classappend="${doc != null and doc.idProofUrl != null ? 'done' : (doc != null and doc.mobileVerified ? 'active' : '')}">
+        <div class="pt-circle">
+          <i th:if="${doc != null and doc.idProofUrl != null}" class="fas fa-check"></i>
+          <i th:unless="${doc != null and doc.idProofUrl != null}" class="fas fa-id-card"></i>
+        </div>
+        <div class="pt-label">ID Proof</div>
+      </div>
+      <div class="pt-step"
+           th:classappend="${doc != null and doc.selfieUrl != null ? 'done' : (doc != null and doc.idProofUrl != null ? 'active' : '')}">
+        <div class="pt-circle">
+          <i th:if="${doc != null and doc.selfieUrl != null}" class="fas fa-check"></i>
+          <i th:unless="${doc != null and doc.selfieUrl != null}" class="fas fa-camera"></i>
+        </div>
+        <div class="pt-label">Selfie</div>
+      </div>
+      <div class="pt-step"
+           th:classappend="${status != null and (status.name() == 'PENDING' or status.name() == 'APPROVED') ? 'done' : ''}">
+        <div class="pt-circle">
+          <i class="fas fa-check"></i>
+        </div>
+        <div class="pt-label">Submitted</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: OTP -->
+    <div class="step-card">
+      <div class="step-card-head">
+        <div class="step-card-title">
+          <span class="step-num-badge" th:classappend="${doc != null and doc.mobileVerified ? 'done' : ''}">
+            <i th:if="${doc != null and doc.mobileVerified}" class="fas fa-check" style="font-size:11px"></i>
+            <span th:unless="${doc != null and doc.mobileVerified}">1</span>
+          </span>
+          Verify Mobile Number
+        </div>
+        <span th:if="${doc != null and doc.mobileVerified}" class="verified-pill">
+          <i class="fas fa-check-circle"></i> Verified
+        </span>
+      </div>
+
+      <div class="step-card-body">
+        <div th:unless="${doc != null and doc.mobileVerified}">
+          <p class="step-desc">
+            We'll send a 6-digit OTP to your registered number:
+            <strong th:text="${user.mobileNumber}">+91XXXXXXXXXX</strong>
+          </p>
+          <form th:action="@{/verify/send-otp}" method="post">
+            <button type="submit" class="btn-send">
+              <i class="fas fa-paper-plane"></i> Send OTP to my number
+            </button>
+          </form>
+          <form th:action="@{/verify/confirm-otp}" method="post">
+            <div class="field">
+              <label class="field-label">Enter 6-digit OTP</label>
+              <div class="otp-wrap">
+                <input type="text" name="otp" class="otp-input" placeholder="——————" maxlength="6" autocomplete="off" required>
+                <button type="submit" class="btn-verify" style="width:auto;padding:0 20px">
+                  <i class="fas fa-check"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div th:if="${doc != null and doc.mobileVerified}" style="font-size:14px;color:var(--muted)">
+          <i class="fas fa-check-circle" style="color:var(--success);margin-right:8px"></i>
+          Mobile <strong th:text="${user.mobileNumber}" style="color:var(--text)">number</strong> verified.
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2+3: DOCUMENTS -->
+    <div class="step-card" th:classappend="${doc == null or !doc.mobileVerified ? 'locked' : ''}">
+      <div class="step-card-head">
+        <div class="step-card-title">
+          <span class="step-num-badge"
+                th:classappend="${doc != null and doc.idProofUrl != null and doc.selfieUrl != null ? 'done' : (doc != null and doc.mobileVerified ? '' : 'locked')}">
+            <i th:if="${doc != null and doc.idProofUrl != null and doc.selfieUrl != null}" class="fas fa-check" style="font-size:11px"></i>
+            <span th:unless="${doc != null and doc.idProofUrl != null and doc.selfieUrl != null}">2</span>
+          </span>
+          Upload Identity Documents
+        </div>
+        <span th:if="${doc == null or !doc.mobileVerified}"
+              style="font-size:12px;color:var(--faint);display:flex;align-items:center;gap:5px">
+          <i class="fas fa-lock" style="font-size:11px"></i> Complete Step 1 first
+        </span>
+      </div>
+
+      <div class="step-card-body">
+
+        <!-- Uploaded previews -->
+        <div th:if="${doc != null and doc.idProofUrl != null}" class="upload-preview">
+          <img th:src="${doc.idProofUrl}" alt="ID Proof">
+          <div class="up-text">
+            <div class="up-label">Government ID</div>
+            <div class="up-name" th:text="${doc.idProofType}">Aadhaar</div>
+          </div>
+          <span class="uploaded-badge"><i class="fas fa-check"></i> Uploaded</span>
+        </div>
+        <div th:if="${doc != null and doc.selfieUrl != null}" class="upload-preview">
+          <img th:src="${doc.selfieUrl}" alt="Selfie">
+          <div class="up-text">
+            <div class="up-label">Selfie Photo</div>
+            <div class="up-name">Verified selfie</div>
+          </div>
+          <span class="uploaded-badge"><i class="fas fa-check"></i> Uploaded</span>
+        </div>
+
+        <!-- Upload form -->
+        <div th:unless="${status != null and status.name() == 'PENDING'}">
+          <form th:action="@{/verify/upload-docs}" method="post" enctype="multipart/form-data">
+
+            <div class="field">
+              <label class="field-label">ID Proof Type</label>
+              <select name="idProofType" class="f-select" required>
+                <option value="">Select your ID type</option>
+                <option value="AADHAAR">🪪 Aadhaar Card</option>
+                <option value="PAN">📄 PAN Card</option>
+                <option value="DRIVING_LICENSE">🚗 Driving License</option>
+                <option value="VOTER_ID">🗳️ Voter ID</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">ID Proof Photo</label>
+              <label class="file-field" id="idFileLabel">
+                <input type="file" name="idProofFile" id="idFile" accept="image/*" required onchange="previewFile(this, 'idPreview', 'idFileLabel')">
+                <div class="file-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="file-text">Click to upload or drag &amp; drop<br><strong>JPG / PNG</strong> — max 5MB</div>
+              </label>
+              <!-- FIX 1: was class="something" with two separate style attrs — fixed class and merged styles -->
+              <div id="idPreview" class="upload-preview" style="display:none; margin-top:10px">
+                <img id="idPreviewImg" src="" alt="ID" style="width:56px;height:56px;object-fit:cover;border-radius:10px">
+                <div class="up-text">
+                  <div class="up-label">ID Proof selected</div>
+                  <div class="up-name" id="idPreviewName">filename.jpg</div>
+                </div>
+                <span class="uploaded-badge">Ready</span>
+              </div>
+              <div class="field-hint">Upload both sides of your ID in one clear photo</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Selfie Photo</label>
+              <label class="file-field" id="selfieFileLabel">
+                <input type="file" name="selfieFile" id="selfieFile" accept="image/*" required onchange="previewFile(this, 'selfiePreview', 'selfieFileLabel')">
+                <div class="file-icon"><i class="fas fa-camera"></i></div>
+                <div class="file-text">Click to upload selfie<br><strong>No sunglasses · Clear face</strong></div>
+              </label>
+              <!-- FIX 2: had duplicate style="display:none" and style="margin-top:10px" — merged into one -->
+              <div id="selfiePreview" class="upload-preview" style="display:none; margin-top:10px">
+                <img id="selfiePreviewImg" src="" alt="Selfie" style="width:56px;height:56px;object-fit:cover;border-radius:10px">
+                <div class="up-text">
+                  <div class="up-label">Selfie selected</div>
+                  <div class="up-name" id="selfiePreviewName">filename.jpg</div>
+                </div>
+                <span class="uploaded-badge">Ready</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-upload"
+                    th:disabled="${doc == null or !doc.mobileVerified}">
+              <i class="fas fa-cloud-upload-alt"></i> Submit for Verification
+            </button>
+          </form>
+        </div>
+
+        <div th:if="${status != null and status.name() == 'PENDING'}" class="pending-notice">
+          <i class="fas fa-hourglass-half"></i>
+          Documents submitted — admin review in progress
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end not-approved -->
+
+</div>
+
+<script>
+  // OTP auto-submit
+  const otpInp = document.querySelector('.otp-input');
+  if (otpInp) {
+    otpInp.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+      if (e.target.value.length === 6) e.target.closest('form').submit();
+    });
+  }
+
+  // File preview
+  function previewFile(input, previewId, labelId) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    const preview = document.getElementById(previewId);
+    const img = document.getElementById(previewId + 'Img');
+    const name = document.getElementById(previewId + 'Name');
+    reader.onload = e => {
+      if (img) img.src = e.target.result;
+      if (name) name.textContent = file.name;
+      if (preview) preview.style.display = 'flex';
+      document.getElementById(labelId).style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Clean URL
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg') || url.searchParams.has('error')) {
+      setTimeout(() => {
+        url.searchParams.delete('msg'); url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.href);
+      }, 5000);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Top Up Wallet — NutriDeliver</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg:        #0d0f0e;
+      --surface:   #141714;
+      --surface2:  #1b1f1b;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.13);
+      --green:     #3ddc7c;
+      --green-dim: rgba(61,220,124,0.10);
+      --amber:     #f5a623;
+      --amber-dim: rgba(245,166,35,0.10);
+      --red:       #ff5a5a;
+      --blue:      #4d9cff;
+      --text:      #e8ece9;
+      --text-dim:  #7a8a7e;
+      --text-faint:#3d4d41;
+      --radius:    14px;
+      --radius-lg: 20px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: .45;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 64px;
+      background: rgba(13,15,14,0.88); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-brand { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+    .brand-mark { width: 32px; height: 32px; background: var(--green); border-radius: 9px; display: grid; place-items: center; color: #0d0f0e; font-size: 13px; }
+    .back-link { font-size: 14px; color: var(--text-dim); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color .2s; }
+    .back-link:hover { color: var(--text); }
+
+    /* ── LAYOUT ── */
+    .page { position: relative; z-index: 1; flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 48px 24px; }
+    .wallet-wrap { width: 100%; max-width: 440px; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .page-header p  { color: var(--text-dim); font-size: 14px; }
+
+    /* ── WALLET VISUAL CARD ── */
+    .wallet-visual {
+      background: linear-gradient(135deg, #0f2218 0%, #1a4030 50%, #0a1a12 100%);
+      border: 1px solid rgba(61,220,124,0.2); border-radius: 20px;
+      padding: 28px; margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .wallet-visual::before {
+      content: ''; position: absolute; top: -30%; right: -10%;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(61,220,124,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .wallet-visual::after {
+      content: ''; position: absolute; bottom: -20%; left: -10%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(61,220,124,0.05) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .wv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; position: relative; z-index: 1; }
+    .wv-brand { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: 7px; }
+    .wv-brand-dot { width: 24px; height: 24px; background: var(--green); border-radius: 6px; display: grid; place-items: center; font-size: 10px; color: #0d0f0e; }
+    .wv-type { font-size: 12px; color: rgba(255,255,255,.3); font-weight: 600; background: rgba(255,255,255,.07); padding: 5px 10px; border-radius: 20px; }
+
+    /* BUG FIX: display formatted balance, not raw 0.0 */
+    .wv-balance-lbl { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 6px; position: relative; z-index: 1; }
+    .wv-balance-num { font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 800; color: var(--green); line-height: 1; position: relative; z-index: 1; }
+    .wv-balance-num .currency { font-size: 26px; font-weight: 600; margin-right: 2px; opacity: .7; }
+
+    .wv-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.08); position: relative; z-index: 1; }
+    .wv-holder-lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 4px; }
+    .wv-holder-name { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.8); }
+    .wv-ssl { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,.3); font-weight: 600; }
+    .wv-ssl i { color: var(--green); font-size: 12px; }
+
+    /* ── QUICK AMOUNTS ── */
+    .amounts-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); margin-bottom: 10px; }
+    .quick-amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .quick-btn {
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--radius); padding: 11px 6px; text-align: center;
+      font-size: 14px; font-weight: 700; color: var(--text-dim);
+      cursor: pointer; transition: all .18s; font-family: 'DM Sans', sans-serif;
+    }
+    .quick-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+    .quick-btn.selected { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+    /* ── FORM ── */
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px; }
+    .amount-input-wrap { position: relative; }
+    .amount-prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--green); pointer-events: none; }
+    .form-input {
+      width: 100%; background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--radius); padding: 14px 14px 14px 36px;
+      color: var(--text); font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+      transition: border-color .2s; letter-spacing: 1px;
+    }
+    .form-input:focus { outline: none; border-color: var(--green); }
+    .form-input::placeholder { color: var(--text-faint); font-size: 16px; font-weight: 400; letter-spacing: 0; }
+
+    /* BUG FIX: add max attribute consistent with server validation (50000) */
+    .amount-hint { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
+    /* ── PAYMENT METHODS ── */
+    .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .method-option { position: relative; }
+    .method-radio { position: absolute; opacity: 0; width: 0; height: 0; }
+    .method-label {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--radius); padding: 12px 14px; cursor: pointer;
+      transition: all .18s;
+    }
+    .method-label:hover { border-color: var(--green); }
+    .method-radio:checked + .method-label { border-color: var(--green); background: var(--green-dim); }
+    .method-icon { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .method-name  { font-size: 13px; font-weight: 700; }
+    .method-sub   { font-size: 11px; color: var(--text-dim); }
+
+    /* ── SUBMIT ── */
+    .btn-pay {
+      width: 100%; padding: 15px; border-radius: var(--radius); font-size: 15px; font-weight: 700;
+      background: var(--green); color: #0d0f0e; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-pay:hover { background: #5affa0; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(61,220,124,.2); }
+    .btn-pay:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    .security-note { display: flex; align-items: center; gap: 7px; justify-content: center; font-size: 12px; color: var(--text-faint); margin-top: 16px; }
+    .security-note i { color: var(--green); }
+  </style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<nav class="topbar">
+  <a class="topbar-brand" href="/customer/home">
+    <span class="brand-mark"><i class="fas fa-leaf"></i></span> NutriDeliver
+  </a>
+  <a href="/customer/home" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+</nav>
+
+<div class="page">
+  <div class="wallet-wrap">
+
+    <div class="page-header">
+      <h1><i class="fas fa-wallet" style="color:var(--green);margin-right:10px;font-size:22px"></i>NutriWallet</h1>
+      <p>Add funds to your account to subscribe and order meals</p>
+    </div>
+
+    <!-- Wallet Visual Card -->
+    <div class="wallet-visual">
+      <div class="wv-top">
+        <div class="wv-brand">
+          <div class="wv-brand-dot"><i class="fas fa-leaf"></i></div>
+          NutriWallet
+        </div>
+        <span class="wv-type">Campus Meal Wallet</span>
+      </div>
+
+      <div class="wv-balance-lbl">Current Balance</div>
+      <!-- BUG FIX: formatted balance using #numbers.formatDecimal, not raw 0.0 -->
+      <div class="wv-balance-num">
+        <span class="currency">₹</span><span th:text="${#numbers.formatDecimal(user.walletBalance, 0, 0)}">0</span>
+      </div>
+
+      <div class="wv-footer">
+        <div>
+          <div class="wv-holder-lbl">Card Holder</div>
+          <div class="wv-holder-name" th:text="${user.fullName}">Student Name</div>
+        </div>
+        <div class="wv-ssl"><i class="fas fa-lock"></i> Secured</div>
+      </div>
+    </div>
+
+    <!-- Top Up Form -->
+    <div class="form-card">
+      <form th:action="@{/customer/wallet/add}" method="post" id="walletForm">
+
+        <div class="form-group">
+          <label class="form-label">Quick Select Amount</label>
+          <div class="quick-amounts">
+            <button type="button" class="quick-btn" onclick="setAmount(500)">₹500</button>
+            <button type="button" class="quick-btn" onclick="setAmount(1000)">₹1,000</button>
+            <button type="button" class="quick-btn selected" onclick="setAmount(2500)">₹2,500</button>
+            <button type="button" class="quick-btn" onclick="setAmount(5000)">₹5,000</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="amtInput">Custom Amount</label>
+          <div class="amount-input-wrap">
+            <span class="amount-prefix">₹</span>
+            <!-- BUG FIX: max attribute matches server-side 50000 limit -->
+            <input type="number" name="amount" id="amtInput" class="form-input"
+                   placeholder="Enter amount" min="100" max="50000" value="2500" required
+                   oninput="clearQuickSelection()">
+          </div>
+          <div class="amount-hint">Min ₹100 · Max ₹50,000 per transaction</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <div class="method-grid">
+            <div class="method-option">
+              <input type="radio" name="paymentMethod" id="upi" value="UPI" class="method-radio" checked>
+              <label for="upi" class="method-label">
+                <div class="method-icon" style="background:rgba(77,156,255,.12);color:var(--blue)"><i class="fas fa-mobile-alt"></i></div>
+                <div><div class="method-name">UPI / GPay</div><div class="method-sub">Instant transfer</div></div>
+              </label>
+            </div>
+            <div class="method-option">
+              <input type="radio" name="paymentMethod" id="card" value="CARD" class="method-radio">
+              <label for="card" class="method-label">
+                <div class="method-icon" style="background:rgba(245,166,35,.12);color:var(--amber)"><i class="fas fa-credit-card"></i></div>
+                <div><div class="method-name">Debit / Credit</div><div class="method-sub">All cards</div></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Summary -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:14px;color:var(--text-dim)">
+          <span>Amount to add</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--green)">₹<span id="summaryAmt">2,500</span></span>
+        </div>
+
+        <button type="submit" class="btn-pay" id="submitBtn">
+          <i class="fas fa-lock"></i> Add to Wallet
+        </button>
+
+      </form>
+
+      <div class="security-note">
+        <i class="fas fa-shield-halved"></i>
+        256-bit SSL encrypted · Demo environment — no real payment processed
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  var amtInput   = document.getElementById('amtInput');
+  var summaryAmt = document.getElementById('summaryAmt');
+  var quickBtns  = document.querySelectorAll('.quick-btn');
+
+  function setAmount(val) {
+    amtInput.value = val;
+    summaryAmt.textContent = val.toLocaleString('en-IN');
+    quickBtns.forEach(b => b.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+  }
+
+  function clearQuickSelection() {
+    quickBtns.forEach(b => b.classList.remove('selected'));
+    var v = parseInt(amtInput.value) || 0;
+    summaryAmt.textContent = v > 0 ? v.toLocaleString('en-IN') : '—';
+  }
+
+  // Live summary update
+  amtInput.addEventListener('input', clearQuickSelection);
+</script>
+
+</body>
+</html>

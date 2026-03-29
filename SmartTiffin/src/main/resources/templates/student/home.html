@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartTiffin | My Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --brand:#FF5200; --brand-l:#FF6B35; --brand-soft:rgba(255,82,0,0.10);
+      --bg:#0C0C0C; --surface:#1A1A1A; --surface2:#222; --surface3:#2A2A2A;
+      --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+      --green:#4ADE80; --green-soft:rgba(74,222,128,0.11);
+      --amber:#FBBF24; --amber-soft:rgba(251,191,36,0.11);
+      --red:#F87171;   --red-soft:rgba(248,113,113,0.11);
+      --blue:#60A5FA;  --blue-soft:rgba(96,165,250,0.11);
+      --purple:#C084FC;--purple-soft:rgba(192,132,252,0.11);
+      --text:#F2F2F2; --text-2:#999; --text-3:#555;
+      --r:14px; --r-xl:20px; --r-2xl:26px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden}
+
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:300;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(12,12,12,0.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:var(--text)}
+    .brand-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),var(--brand-l));border-radius:10px;display:grid;place-items:center;font-size:17px;box-shadow:0 4px 14px rgba(255,82,0,.4)}
+    .brand-dot{color:var(--brand)}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .user-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:50px;padding:4px 14px 4px 6px}
+    .user-ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#ff8c42);display:grid;place-items:center;font-size:11px;color:#fff;font-weight:800}
+    .user-name{font-size:13px;font-weight:700}
+    .wallet-pill{display:flex;align-items:center;gap:6px;background:var(--green-soft);border:1px solid rgba(74,222,128,.22);border-radius:50px;padding:5px 14px;font-size:13px;font-weight:800;color:var(--green);text-decoration:none;transition:all .2s}
+    .wallet-pill:hover{background:rgba(74,222,128,.2)}
+    .btn-logout{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:50px;font-size:12px;font-weight:700;background:transparent;color:var(--text-2);border:1px solid var(--border2);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s}
+    .btn-logout:hover{background:var(--surface2);color:var(--text)}
+
+    /* TAB NAV */
+    .tab-nav{position:sticky;top:60px;z-index:200;display:flex;background:rgba(12,12,12,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+    .tab-nav::-webkit-scrollbar{display:none}
+    .tab-btn{display:flex;align-items:center;gap:7px;padding:15px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text-2);background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;transition:all .18s}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+    .tab-icon{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:11px;background:var(--surface);transition:all .18s}
+    .tab-btn.active .tab-icon{background:var(--brand-soft);color:var(--brand)}
+    .badge-pill{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25);font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px}
+
+    /* PAGE */
+    .page{padding:26px 24px;max-width:1300px;margin:0 auto}
+    .tab-pane{display:none;animation:riseUp .28s ease}
+    .tab-pane.active{display:block}
+    @keyframes riseUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ALERTS */
+    .alert{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:14px;font-weight:600;font-size:14px;margin-bottom:22px;animation:riseUp .3s ease}
+    .alert-success{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+    .alert-danger{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+    .alert-warning{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.3)}
+
+    /* HERO BANNER */
+    .hero-banner{position:relative;overflow:hidden;background:linear-gradient(120deg,#1c0900 0%,#1f0c00 50%,#0c140d 100%);border:1px solid rgba(255,82,0,.14);border-radius:var(--r-2xl);padding:26px 28px;margin-bottom:22px}
+    .hero-banner::before{content:'';position:absolute;top:-80px;right:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,82,0,.16) 0%,transparent 70%);pointer-events:none}
+    .hero-banner::after{content:'';position:absolute;bottom:-50px;left:35%;width:200px;height:200px;background:radial-gradient(circle,rgba(74,222,128,.07) 0%,transparent 70%);pointer-events:none}
+    .hero-inner{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px}
+    .hero-left h1{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;letter-spacing:-.5px;line-height:1.2;margin-bottom:6px}
+    .wave{display:inline-block;animation:waveIt .9s ease-in-out infinite alternate;transform-origin:70% 70%}
+    @keyframes waveIt{from{transform:rotate(0deg)}to{transform:rotate(16deg)}}
+    .hero-left p{font-size:13px;color:var(--text-2);line-height:1.6}
+    .hero-stats{display:flex;gap:12px}
+    .hstat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 18px;text-align:center;min-width:86px}
+    .hstat-val{font-family:'Nunito',sans-serif;font-weight:900;font-size:28px;letter-spacing:-1px;line-height:1}
+    .hstat-lbl{font-size:10px;font-weight:600;color:var(--text-2);margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
+    .hv-green{color:var(--green)}.hv-amber{color:var(--amber)}.hv-brand{color:var(--brand)}
+
+    /* DASHBOARD GRID */
+    .dash-grid{display:grid;grid-template-columns:310px 1fr;gap:20px;align-items:start}
+    .left-col{display:flex;flex-direction:column;gap:14px}
+
+    /* SUBSCRIPTION CARD */
+    .sub-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);overflow:hidden}
+    .sub-header{padding:16px 20px;background:linear-gradient(135deg,#1d0e00,#220d00);border-bottom:1px solid rgba(255,82,0,.12);display:flex;align-items:center;gap:10px}
+    .sub-crown{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-l));display:grid;place-items:center;font-size:14px;color:#fff;box-shadow:0 4px 12px rgba(255,82,0,.35)}
+    .sub-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px}
+    .sub-body{padding:18px 20px}
+    .sub-empty-txt{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:12px}
+    .plan-price{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:var(--brand);margin-bottom:14px}
+    .plan-price span{font-size:13px;font-weight:500;color:var(--text-2)}
+    .meals-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+    .meals-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:44px;letter-spacing:-2px;color:var(--green);line-height:1}
+    .meals-lbl{font-size:13px;color:var(--text-2)}
+    .plan-status-right{text-align:right}
+    .chip-active{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:4px 11px;border-radius:20px;background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.25)}
+    .chip-paused{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:4px 11px;border-radius:20px;background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+    .chip-blink{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blinkDot 2s infinite}
+    @keyframes blinkDot{0%,100%{opacity:1}50%{opacity:.3}}
+    .expiry-lbl{font-size:11px;color:var(--text-3);margin-top:4px}
+    .bar-track{height:7px;border-radius:20px;background:var(--surface3);overflow:hidden;margin-top:12px;margin-bottom:6px}
+    .bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--green),#86efac)}
+    .bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text-3)}
+    .pause-note{display:flex;align-items:center;gap:8px;background:var(--amber-soft);border:1px solid rgba(251,191,36,.2);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:600;color:var(--amber);margin-bottom:12px}
+    .sub-actions{display:flex;gap:8px;margin-top:14px}
+    .sub-actions form{flex:1}
+    .btn-sub{width:100%;padding:10px;border-radius:11px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .2s}
+    .btn-pause{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.25)}.btn-pause:hover{background:var(--amber);color:#000}
+    .btn-resume{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.25)}.btn-resume:hover{background:var(--green);color:#000}
+    .btn-cancel{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25)}.btn-cancel:hover{background:var(--red);color:#fff}
+    .btn-activate{width:100%;padding:15px;border-radius:15px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .22s;box-shadow:0 6px 20px rgba(255,82,0,.35)}
+    .btn-activate:hover{transform:translateY(-2px)}
+
+    /* MINI STATS */
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .mini-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;position:relative;overflow:hidden}
+    .mini-lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+    .mini-val{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;letter-spacing:-1px;line-height:1}
+    .mini-sub{font-size:11px;color:var(--text-2);margin-top:5px}
+    .mini-acc{position:absolute;bottom:-8px;right:-4px;font-size:48px;opacity:.06;pointer-events:none}
+    .mv-green{color:var(--green)}.mv-amber{color:var(--amber)}
+    .topup-link{font-size:11px;color:var(--brand);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:5px}
+    .topup-link:hover{color:var(--brand-l)}
+
+    /* KARMA CARD */
+    .karma-card{background:linear-gradient(135deg,#110d1a,#15091c);border:1px solid rgba(192,132,252,.16);border-radius:var(--r-xl);padding:18px;position:relative;overflow:hidden}
+    .karma-card::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(192,132,252,.16) 0%,transparent 70%);pointer-events:none}
+    .karma-inner{position:relative;z-index:1}
+    .karma-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .karma-icon{width:38px;height:38px;border-radius:11px;background:rgba(192,132,252,.14);display:grid;place-items:center;font-size:17px;color:var(--purple)}
+    .karma-ttl{font-weight:700;font-size:14px}.karma-sub{font-size:12px;color:var(--text-2)}
+    .karma-divider{height:1px;background:rgba(192,132,252,.1);margin:12px 0}
+    .karma-bottom{display:flex;justify-content:space-between;align-items:center}
+    .karma-txt{font-size:12px;color:var(--text-2)}
+    .karma-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:30px;color:var(--purple);letter-spacing:-1px}
+
+    /* TODAY MENU */
+    .menu-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .menu-hdr h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;letter-spacing:-.4px}
+    .day-chip{font-size:12px;font-weight:800;color:var(--brand);background:var(--brand-soft);border:1px solid rgba(255,82,0,.2);padding:5px 13px;border-radius:20px}
+    .slot-pills{display:flex;gap:10px;margin-bottom:20px}
+    .slot-opt{flex:1}
+    .slot-radio{position:absolute;opacity:0;width:0;height:0}
+    .slot-lbl{display:flex;flex-direction:column;align-items:center;gap:5px;padding:15px 8px;background:var(--surface);border:1.5px solid var(--border2);border-radius:18px;cursor:pointer;text-align:center;transition:all .2s}
+    .slot-lbl:hover:not(.disabled){border-color:var(--brand);background:var(--brand-soft)}
+    .slot-radio:checked+.slot-lbl{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 0 0 3px rgba(255,82,0,.12)}
+    .slot-lbl.disabled{opacity:.38;cursor:not-allowed}
+    .slot-ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:15px;transition:all .2s}
+    .si-b{background:rgba(251,191,36,.14);color:var(--amber)}.si-l{background:rgba(96,165,250,.14);color:var(--blue)}.si-d{background:rgba(192,132,252,.14);color:var(--purple)}
+    .slot-name-txt{font-weight:700;font-size:13px}.slot-time-txt{font-size:10px;color:var(--text-2)}
+    .slot-radio:checked+.slot-lbl .slot-time-txt{color:rgba(255,82,0,.7)}
+
+    /* MEAL CARD */
+    .meal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);overflow:hidden}
+    .meal-img-wrap{position:relative;height:200px;overflow:hidden}
+    .meal-img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .3s,transform .5s}
+    .meal-img-wrap:hover .meal-img{transform:scale(1.04)}
+    .meal-img-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.7) 100%)}
+    .meal-cat-badge{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px;backdrop-filter:blur(12px)}
+    .cat-veg{background:rgba(74,222,128,.25);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+    .cat-nonveg{background:rgba(248,113,113,.25);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+    .meal-card-body{padding:20px}
+    .meal-name-big{font-family:'Nunito',sans-serif;font-weight:900;font-size:21px;letter-spacing:-.3px;color:var(--text);margin-bottom:14px;min-height:50px;line-height:1.2}
+    .nutri-strip{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+    .nutri-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:13px;padding:13px;text-align:center;position:relative;overflow:hidden}
+    .nutri-pill::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:20px}
+    .np-kcal::before{background:linear-gradient(90deg,var(--amber),#fde68a)}.np-pro::before{background:linear-gradient(90deg,var(--green),#86efac)}
+    .nutri-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px}
+    .nutri-val{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;letter-spacing:-.6px;line-height:1}
+    .nv-a{color:var(--amber)}.nv-g{color:var(--green)}
+    .nutri-unit{font-size:11px;font-weight:500;color:var(--text-2)}
+    .lock-note{display:flex;align-items:center;gap:9px;padding:13px 16px;border-radius:13px;font-size:13px;font-weight:600;background:var(--surface2);color:var(--text-2);border:1px solid var(--border2)}
+    .pause-note-cta{display:flex;align-items:center;gap:9px;padding:13px 16px;border-radius:13px;font-size:13px;font-weight:600;background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+    .btn-order{width:100%;padding:15px;border-radius:15px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .22s;box-shadow:0 6px 20px rgba(255,82,0,.35)}
+    .btn-order:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,82,0,.45)}
+
+    /* ORDERS */
+    .section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+    .section-hdr h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;letter-spacing:-.4px}
+    .orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+    .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s}
+    .order-card:hover{transform:translateY(-3px);border-color:var(--border2);box-shadow:0 12px 32px rgba(0,0,0,.3)}
+    .oc-top{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start}
+    .slot-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;background:var(--surface2);color:var(--text-2);border:1px solid var(--border2)}
+    .status-chip{font-size:11px;font-weight:800;padding:5px 11px;border-radius:20px}
+    .status-PENDING{background:var(--amber-soft);color:var(--amber)}
+    .status-PACKED{background:var(--blue-soft);color:var(--blue)}
+    .status-OUT_FOR_DELIVERY{background:var(--green-soft);color:var(--green)}
+    .status-DELIVERED{background:var(--surface2);color:var(--text-2);border:1px solid var(--border2)}
+    .status-DONATED{background:var(--purple-soft);color:var(--purple)}
+    .status-CANCELLED{background:var(--surface2);color:var(--text-3)}
+    .oc-body{padding:13px 16px 16px}
+    .oc-name{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:4px;line-height:1.2}
+    .oc-date{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:6px;margin-bottom:14px}
+
+    /* Tracking steps */
+    .track-steps{display:flex;align-items:flex-start;margin-bottom:16px}
+    .ts{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+    .ts::after{content:'';position:absolute;top:13px;left:50%;right:-50%;height:2px;background:var(--surface3);z-index:0}
+    .ts:last-child::after{display:none}
+    .ts.done::after{background:var(--green)}
+    .ts-dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--surface3);background:var(--surface2);display:grid;place-items:center;font-size:9px;z-index:1;transition:all .3s}
+    .ts.done .ts-dot{background:var(--green);border-color:var(--green);color:#000}
+    .ts.active .ts-dot{border-color:var(--green);color:var(--green);animation:pulseDot 1.5s infinite}
+    @keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+    .ts-lbl{font-size:9px;font-weight:700;color:var(--text-3);margin-top:5px;text-align:center;text-transform:uppercase;letter-spacing:.4px}
+    .ts.done .ts-lbl,.ts.active .ts-lbl{color:var(--green)}
+
+    /* OTP box (customer shares this with delivery rider) */
+    .otp-box{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .otp-label-txt{font-size:12px;color:var(--text-2);font-weight:600}
+    .otp-code{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:var(--green);letter-spacing:4px}
+
+    /* Action buttons */
+    .btn-action{width:100%;padding:11px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;border:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;margin-top:6px}
+    .btn-skip{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25)}.btn-skip:hover{background:var(--red);color:#fff}
+    .btn-donate{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.25)}.btn-donate:hover{background:var(--amber);color:#000}
+    .btn-track{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.25)}.btn-track:hover{background:var(--green);color:#000}
+    .btn-rate{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(96,165,250,.25)}.btn-rate:hover{background:var(--blue);color:#fff}
+    .info-note{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--text-2);text-align:center;font-weight:600}
+    .info-note-purple{background:var(--purple-soft);color:var(--purple);border:1px solid rgba(192,132,252,.25);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:600;text-align:center}
+    .empty-state{text-align:center;padding:64px 20px;color:var(--text-3)}
+    .empty-state .ei{font-size:52px;display:block;margin-bottom:14px;opacity:.15}
+    .empty-state h4{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;color:var(--text-2);margin-bottom:5px}
+    .empty-state p{font-size:13px}
+
+    /* WEEKLY PLAN */
+    .plan-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+    .plan-hdr h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;letter-spacing:-.4px}
+    .diet-badge{font-size:13px;font-weight:800;padding:6px 14px;border-radius:20px}
+    .plan-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);overflow:hidden}
+    .plan-table{width:100%;border-collapse:collapse}
+    .plan-table th{padding:14px 18px;font-size:10px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--text-3);background:var(--surface2);border-bottom:1px solid var(--border);text-align:center}
+    .plan-table th:first-child{text-align:left}
+    .plan-table td{padding:15px 18px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:center}
+    .plan-table tr:last-child td{border-bottom:none}
+    .plan-table .today-row{background:rgba(255,82,0,.04)}
+    .day-cell{font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;color:var(--brand);text-align:left}
+    .today-tag{font-size:10px;font-weight:800;color:var(--brand);background:var(--brand-soft);padding:2px 8px;border-radius:20px;margin-left:7px}
+    .meal-nm{font-weight:600;font-size:14px;color:var(--text);display:block;margin-bottom:4px}
+    .meal-meta-row{display:flex;align-items:center;justify-content:center;gap:5px}
+    .cat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .cd-veg{background:var(--green)}.cd-nonveg{background:var(--red)}
+    .meta-txt{font-size:11px;color:var(--text-2)}
+    .empty-cell{font-size:12px;color:var(--text-3);font-style:italic}
+
+    /* PROFILE */
+    .profile-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px}
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .fg{display:flex;flex-direction:column;gap:6px}
+    .fg.full{grid-column:1/-1}
+    .fg-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3)}
+    .fg-input,.fg-select,.fg-textarea{background:var(--surface2);border:1.5px solid var(--border2);border-radius:13px;padding:12px 15px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;transition:all .2s;width:100%}
+    .fg-input:focus,.fg-select:focus,.fg-textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(255,82,0,.1)}
+    .fg-input::placeholder,.fg-textarea::placeholder{color:var(--text-3)}
+    .fg-select{appearance:none;cursor:pointer}
+    .fg-textarea{resize:vertical;min-height:80px}
+    .fg-hint{font-size:11px;color:var(--text-3)}
+    .form-actions{grid-column:1/-1;display:flex;gap:12px;margin-top:8px}
+    .btn-save{padding:13px 28px;border-radius:13px;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;box-shadow:0 4px 14px rgba(255,82,0,.3);display:flex;align-items:center;gap:7px}
+    .btn-save:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(255,82,0,.4)}
+    .btn-ghost{padding:13px 22px;border-radius:13px;font-size:14px;font-weight:700;background:transparent;color:var(--text-2);border:1px solid var(--border2);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center}
+    .btn-ghost:hover{background:var(--surface2);color:var(--text)}
+
+    /* MODALS */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:24px}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-2xl);overflow:hidden;width:100%;max-width:680px;animation:riseUp .25s ease}
+    .modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border)}
+    .modal-hdr h3{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;display:flex;align-items:center;gap:9px}
+    .modal-close{background:transparent;border:none;color:var(--text-2);font-size:18px;cursor:pointer;padding:4px;transition:color .2s}.modal-close:hover{color:var(--text)}
+    #trackMap{height:340px;width:100%}
+    .modal-foot{padding:12px 22px;background:var(--surface2);border-top:1px solid var(--border);font-size:12px;color:var(--text-2)}
+    .rate-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:24px}
+    .rate-overlay.open{display:flex}
+
+    /* RESPONSIVE */
+    @media(max-width:1024px){.dash-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.profile-grid{grid-template-columns:1fr}.page{padding:18px 16px}}
+    @media(max-width:600px){.hero-stats{display:none}.slot-pills{gap:7px}}
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <a class="brand" href="#">
+    <span class="brand-logo">🔥</span>
+    SmartTiffin<span class="brand-dot">.</span>
+  </a>
+  <div class="topbar-right">
+    <a href="/customer/wallet" class="wallet-pill">
+      <i class="fas fa-wallet" style="font-size:12px"></i>
+      ₹<span th:text="${#numbers.formatDecimal(user.walletBalance,0,0)}">0</span>
+    </a>
+    <div class="user-pill">
+      <div class="user-ava" th:text="${#strings.substring(user.fullName,0,1)}">S</div>
+      <span class="user-name" th:text="${user.fullName}">Student</span>
+    </div>
+    <form th:action="@{/logout}" method="post" style="margin:0">
+      <button class="btn-logout" type="submit"><i class="fas fa-power-off" style="font-size:11px"></i> Logout</button>
+    </form>
+  </div>
+</nav>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)">
+    <span class="tab-icon"><i class="fas fa-house"></i></span> Home
+  </button>
+  <button class="tab-btn" onclick="switchTab('orders',this)">
+    <span class="tab-icon"><i class="fas fa-bag-shopping"></i></span> My Orders
+    <span class="badge-pill" th:text="${#lists.size(myOrders)}">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('plan',this)">
+    <span class="tab-icon"><i class="fas fa-calendar-week"></i></span> Weekly Plan
+  </button>
+  <button class="tab-btn" onclick="switchTab('profile',this)">
+    <span class="tab-icon"><i class="fas fa-user-gear"></i></span> Profile
+  </button>
+</div>
+
+<div class="page">
+
+  <!-- ALERTS -->
+  <div th:if="${param.msg}" class="alert alert-success">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'OrderPlaced'">🎉 Order placed! Your tiffin is being prepped.</span>
+      <span th:case="'SkippedAndRefunded'">Meal skipped — 1 quota refunded to your plan.</span>
+      <span th:case="'MealDonated'">❤️ Meal donated! You earned 50 Health Points.</span>
+      <span th:case="'PlanActivated'">Plan activated! Enjoy 90 meals over 30 days.</span>
+      <span th:case="'PlanPaused'">Plan paused. No deliveries until you resume.</span>
+      <span th:case="'PlanResumed'">Plan resumed! Deliveries continue from next slot.</span>
+      <span th:case="'PlanCancelled'">Plan cancelled.</span>
+      <span th:case="'ProfileUpdated'">Profile saved successfully.</span>
+      <span th:case="'ReviewSubmitted'">Review submitted! +10 Health Points earned.</span>
+      <span th:case="'PaymentSuccess'">Wallet topped up successfully.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="alert alert-danger">
+    <i class="fas fa-times-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'NoActivePlanOrMeals'">No active plan. Please subscribe first.</span>
+      <span th:case="'PlanPaused'">Your plan is paused. Resume it to place orders.</span>
+      <span th:case="'AlreadyOrdered'">You've already ordered this slot today.</span>
+      <span th:case="'BreakfastOver'">Breakfast ordering closed (cutoff 10 AM).</span>
+      <span th:case="'LunchOver'">Lunch ordering closed (cutoff 2 PM).</span>
+      <span th:case="'DinnerOver'">Dinner ordering closed (cutoff 9 PM).</span>
+      <span th:case="'TooLateToSkip'">This order can no longer be cancelled.</span>
+      <span th:case="'CannotDonate'">This order cannot be donated.</span>
+      <span th:case="'LowBalance'">Insufficient balance. Top up ₹2,500 to subscribe.</span>
+      <span th:case="'AlreadySubscribed'">You already have an active subscription.</span>
+      <span th:case="'NoPlan'">No active plan found.</span>
+      <span th:case="*" th:text="${param.error[0]}">Something went wrong.</span>
+    </span>
+  </div>
+
+  <!-- TAB 1: DASHBOARD -->
+  <div id="tab-dashboard" class="tab-pane active">
+
+    <!-- Hero -->
+    <div class="hero-banner">
+      <div class="hero-inner">
+        <div class="hero-left">
+          <h1>Hey, <span th:text="${user.fullName.split(' ')[0]}">there</span>! <span class="wave">👋</span></h1>
+          <p>Ready for today's meal? <strong th:text="${todayName}">Monday</strong>'s menu is live.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat">
+            <div class="hstat-val hv-green" th:text="${subscription != null ? subscription.remainingMeals : 0}">0</div>
+            <div class="hstat-lbl">Meals Left</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val hv-amber" th:text="${user.healthPoints}">0</div>
+            <div class="hstat-lbl">Health Pts</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val hv-brand">₹<span th:text="${#numbers.formatDecimal(user.walletBalance,0,0)}">0</span></div>
+            <div class="hstat-lbl">Wallet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="left-col">
+
+        <!-- Subscription Card -->
+        <div class="sub-card">
+          <div class="sub-header">
+            <div class="sub-crown"><i class="fas fa-crown"></i></div>
+            <div class="sub-title">Monthly Plan</div>
+          </div>
+          <div class="sub-body">
+            <!-- No plan -->
+            <div th:if="${subscription == null}">
+              <p class="sub-empty-txt">Subscribe for 30 days — get Breakfast, Lunch &amp; Dinner delivered to your hostel. 90 meals total.</p>
+              <div class="plan-price">₹2,500 <span>/ month</span></div>
+              <form th:action="@{/customer/subscribe}" method="post">
+                <button class="btn-activate" type="submit"><i class="fas fa-crown"></i> Activate My Plan</button>
+              </form>
+            </div>
+            <!-- Active plan -->
+            <div th:if="${subscription != null}">
+              <div th:if="${subPaused}" class="pause-note">
+                <i class="fas fa-pause-circle"></i> Plan paused — no deliveries until resumed.
+              </div>
+              <div class="meals-top">
+                <div>
+                  <div class="meals-num" th:text="${subscription.remainingMeals}">90</div>
+                  <div class="meals-lbl">meals remaining</div>
+                </div>
+                <div class="plan-status-right">
+                  <span class="chip-active" th:if="${!subPaused}"><span class="chip-blink"></span> Active</span>
+                  <span class="chip-paused" th:if="${subPaused}"><i class="fas fa-pause" style="font-size:9px"></i> Paused</span>
+                  <div class="expiry-lbl">Expires <span th:text="${subscription.endDate}">—</span></div>
+                </div>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" th:style="'width:' + ${(subscription.remainingMeals / 90.0) * 100} + '%'"></div>
+              </div>
+              <div class="bar-labels">
+                <span th:text="${subscription.remainingMeals} + ' left'">0 left</span>
+                <span>90 total</span>
+              </div>
+              <div class="sub-actions">
+                <form th:if="${!subPaused}" th:action="@{/customer/subscription/pause}" method="post">
+                  <button type="submit" class="btn-sub btn-pause" onclick="return confirm('Pause your plan?')"><i class="fas fa-pause"></i> Pause</button>
+                </form>
+                <form th:if="${subPaused}" th:action="@{/customer/subscription/resume}" method="post">
+                  <button type="submit" class="btn-sub btn-resume"><i class="fas fa-play"></i> Resume</button>
+                </form>
+                <form th:action="@{/customer/subscription/cancel}" method="post">
+                  <button type="submit" class="btn-sub btn-cancel" onclick="return confirm('Cancel your plan? This cannot be undone.')"><i class="fas fa-times"></i> Cancel</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini stats -->
+        <div class="mini-grid">
+          <div class="mini-card">
+            <div class="mini-lbl">Wallet</div>
+            <div class="mini-val mv-green">₹<span th:text="${#numbers.formatDecimal(user.walletBalance,0,0)}">0</span></div>
+            <a href="/customer/wallet" class="topup-link"><i class="fas fa-plus" style="font-size:10px"></i> Top Up</a>
+            <span class="mini-acc">💳</span>
+          </div>
+          <div class="mini-card">
+            <div class="mini-lbl">Health Pts</div>
+            <div class="mini-val mv-amber" th:text="${user.healthPoints}">0</div>
+            <div class="mini-sub">Earn by donating meals</div>
+            <span class="mini-acc">⭐</span>
+          </div>
+        </div>
+
+        <!-- Karma -->
+        <div class="karma-card">
+          <div class="karma-inner">
+            <div class="karma-top">
+              <div class="karma-icon"><i class="fas fa-hand-holding-heart"></i></div>
+              <div>
+                <div class="karma-ttl">Food Rescue Hero</div>
+                <div class="karma-sub">Your social impact score</div>
+              </div>
+            </div>
+            <div class="karma-divider"></div>
+            <div class="karma-bottom">
+              <div class="karma-txt">Karma Level</div>
+              <div class="karma-num">
+                <i class="fas fa-star" style="font-size:18px;color:var(--amber);margin-right:4px"></i>
+                <span th:text="${user.healthPoints / 50}">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: Today's Menu -->
+      <div>
+        <div class="menu-hdr">
+          <h2>Today's Menu 🍽️</h2>
+          <span class="day-chip" th:text="${todayName}">MONDAY</span>
+        </div>
+
+        <form th:action="@{/customer/order/place}" method="post">
+          <div class="slot-pills">
+            <div class="slot-opt">
+              <input type="radio" name="mealType" id="bfast" value="BREAKFAST" class="slot-radio" th:disabled="${!canOrderBreakfast}" required>
+              <label for="bfast" class="slot-lbl" th:classappend="${!canOrderBreakfast ? ' disabled' : ''}">
+                <div class="slot-ico si-b"><i class="fas fa-coffee"></i></div>
+                <span class="slot-name-txt">Breakfast</span>
+                <span class="slot-time-txt">Before 10 AM</span>
+              </label>
+            </div>
+            <div class="slot-opt">
+              <input type="radio" name="mealType" id="lunch" value="LUNCH" class="slot-radio" th:disabled="${!canOrderLunch}">
+              <label for="lunch" class="slot-lbl" th:classappend="${!canOrderLunch ? ' disabled' : ''}">
+                <div class="slot-ico si-l"><i class="fas fa-sun"></i></div>
+                <span class="slot-name-txt">Lunch</span>
+                <span class="slot-time-txt">Before 2 PM</span>
+              </label>
+            </div>
+            <div class="slot-opt">
+              <input type="radio" name="mealType" id="dinner" value="DINNER" class="slot-radio" th:disabled="${!canOrderDinner}">
+              <label for="dinner" class="slot-lbl" th:classappend="${!canOrderDinner ? ' disabled' : ''}">
+                <div class="slot-ico si-d"><i class="fas fa-moon"></i></div>
+                <span class="slot-name-txt">Dinner</span>
+                <span class="slot-time-txt">Before 9 PM</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="meal-card">
+            <div class="meal-img-wrap">
+              <img id="mealImage" class="meal-img" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80" alt="Today's meal">
+              <div class="meal-img-overlay"></div>
+              <span id="displayCategoryBadge" class="meal-cat-badge" style="display:none"></span>
+            </div>
+            <div class="meal-card-body">
+              <div class="meal-name-big" id="displayItems">Select a slot to see today's menu</div>
+              <div class="nutri-strip">
+                <div class="nutri-pill np-kcal">
+                  <div class="nutri-lbl">Calories</div>
+                  <div class="nutri-val nv-a"><span id="displayCalories">—</span> <span class="nutri-unit">kcal</span></div>
+                </div>
+                <div class="nutri-pill np-pro">
+                  <div class="nutri-lbl">Protein</div>
+                  <div class="nutri-val nv-g"><span id="displayProtein">—</span> <span class="nutri-unit">g</span></div>
+                </div>
+              </div>
+              <div th:if="${subscription == null || subscription.remainingMeals <= 0}">
+                <div class="lock-note"><i class="fas fa-lock"></i> Activate a Monthly Plan to start ordering.</div>
+              </div>
+              <div th:if="${subscription != null && subscription.remainingMeals > 0 && subPaused}">
+                <div class="pause-note-cta"><i class="fas fa-pause-circle"></i> Plan is paused — resume to place orders.</div>
+              </div>
+              <div th:if="${subscription != null && subscription.remainingMeals > 0 && !subPaused}">
+                <button type="submit" class="btn-order"><i class="fas fa-utensils"></i> Place Order</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: MY ORDERS -->
+  <div id="tab-orders" class="tab-pane">
+    <div class="section-hdr">
+      <h2>My Orders</h2>
+      <span class="badge-pill" th:text="${#lists.size(myOrders)} + ' total'">0</span>
+    </div>
+
+    <div class="orders-grid" th:if="${!#lists.isEmpty(myOrders)}">
+      <div th:each="order : ${myOrders}" class="order-card">
+        <div class="oc-top">
+          <span class="slot-badge">
+            <i th:classappend="${order.mealType.name() == 'BREAKFAST' ? 'fas fa-coffee' : (order.mealType.name() == 'LUNCH' ? 'fas fa-sun' : 'fas fa-moon')}"></i>
+            <span th:text="${order.mealType}">LUNCH</span>
+          </span>
+          <span class="status-chip" th:classappend="'status-' + ${order.status.name()}" th:text="${order.status}">PENDING</span>
+        </div>
+        <div class="oc-body">
+          <div class="oc-name" th:text="${order.items}">Meal</div>
+          <div class="oc-date">
+            <i class="fas fa-calendar-days"></i>
+            <span th:text="${order.orderDate != null ? #temporals.format(order.orderDate,'dd MMM yyyy · HH:mm') : '—'}">—</span>
+          </div>
+
+          <!-- 4-step tracking bar -->
+          <div class="track-steps">
+            <div class="ts" th:classappend="${order.status.name() == 'PENDING' || order.status.name() == 'PACKED' || order.status.name() == 'OUT_FOR_DELIVERY' || order.status.name() == 'DELIVERED' ? 'done' : ''}">
+              <div class="ts-dot"><i class="fas fa-check" style="font-size:8px"></i></div>
+              <div class="ts-lbl">Confirmed</div>
+            </div>
+            <div class="ts" th:classappend="${order.status.name() == 'PACKED' ? 'active' : (order.status.name() == 'OUT_FOR_DELIVERY' || order.status.name() == 'DELIVERED' ? 'done' : '')}">
+              <div class="ts-dot"><i class="fas fa-box" style="font-size:8px"></i></div>
+              <div class="ts-lbl">Packed</div>
+            </div>
+            <div class="ts" th:classappend="${order.status.name() == 'OUT_FOR_DELIVERY' ? 'active' : (order.status.name() == 'DELIVERED' ? 'done' : '')}">
+              <div class="ts-dot"><i class="fas fa-motorcycle" style="font-size:8px"></i></div>
+              <div class="ts-lbl">On the way</div>
+            </div>
+            <div class="ts" th:classappend="${order.status.name() == 'DELIVERED' ? 'done' : ''}">
+              <div class="ts-dot"><i class="fas fa-house" style="font-size:8px"></i></div>
+              <div class="ts-lbl">Delivered</div>
+            </div>
+          </div>
+
+          <!-- PENDING: show delivery OTP + skip option -->
+          <div th:if="${order.status.name() == 'PENDING'}">
+            <div class="otp-box">
+              <span class="otp-label-txt">Delivery OTP</span>
+              <span class="otp-code" th:text="${order.deliveryOtp}">----</span>
+            </div>
+            <form th:action="@{'/customer/cancel/' + ${order.id}}" method="post">
+              <button type="submit" class="btn-action btn-skip" onclick="return confirm('Skip this meal? Your quota will be refunded.')">
+                <i class="fas fa-times"></i> Skip &amp; Refund
+              </button>
+            </form>
+          </div>
+
+          <!-- PACKED: show delivery OTP + donate -->
+          <div th:if="${order.status.name() == 'PACKED'}">
+            <div class="otp-box">
+              <span class="otp-label-txt">Delivery OTP</span>
+              <span class="otp-code" th:text="${order.deliveryOtp}">----</span>
+            </div>
+            <form th:action="@{'/customer/donate/' + ${order.id}}" method="post">
+              <button type="submit" class="btn-action btn-donate" onclick="return confirm('Donate this meal? You\'ll earn 50 Health Points.')">
+                <i class="fas fa-hand-holding-heart"></i> Donate (+50 pts)
+              </button>
+            </form>
+          </div>
+
+          <!-- OUT FOR DELIVERY: show OTP to share with rider + live track -->
+          <div th:if="${order.status.name() == 'OUT_FOR_DELIVERY'}">
+            <div class="otp-box">
+              <span class="otp-label-txt">Share with rider</span>
+              <span class="otp-code" th:text="${order.deliveryOtp}">----</span>
+            </div>
+            <button type="button" class="btn-action btn-track" th:onclick="'openTrackModal(' + ${order.id} + ')'">
+              <i class="fas fa-satellite-dish"></i> Live Track
+            </button>
+          </div>
+
+          <!-- DELIVERED -->
+          <div th:if="${order.status.name() == 'DELIVERED'}">
+            <button type="button" class="btn-action btn-rate" th:onclick="'openRateModal(' + ${order.id} + ')'">
+              <i class="fas fa-star"></i> Rate This Meal
+            </button>
+          </div>
+
+          <!-- DONATED -->
+          <div th:if="${order.status.name() == 'DONATED'}">
+            <div class="info-note-purple"><i class="fas fa-heart" style="margin-right:6px"></i> Donated to charity ❤️</div>
+          </div>
+
+          <!-- CANCELLED -->
+          <div th:if="${order.status.name() == 'CANCELLED'}">
+            <div class="info-note"><i class="fas fa-rotate-left" style="margin-right:6px"></i> Quota refunded to your plan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(myOrders)}" class="empty-state">
+      <span class="ei">🍱</span>
+      <h4>No orders yet</h4>
+      <p>Head to Home and place your first tiffin!</p>
+    </div>
+  </div>
+
+  <!-- TAB 3: WEEKLY PLAN -->
+  <div id="tab-plan" class="tab-pane">
+    <div class="plan-hdr">
+      <h2>Weekly Meal Plan 📅</h2>
+      <span class="diet-badge" th:classappend="${user.dietaryPreference == 'Pure Veg' ? 'cat-veg' : 'cat-nonveg'}">
+        <i th:classappend="${user.dietaryPreference == 'Pure Veg' ? 'fas fa-leaf' : 'fas fa-drumstick-bite'}" style="margin-right:5px"></i>
+        <span th:text="${user.dietaryPreference}">Pure Veg</span>
+      </span>
+    </div>
+    <div class="plan-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th><i class="fas fa-coffee" style="color:var(--amber);margin-right:5px"></i>Breakfast</th>
+            <th><i class="fas fa-sun" style="color:var(--blue);margin-right:5px"></i>Lunch</th>
+            <th><i class="fas fa-moon" style="color:var(--purple);margin-right:5px"></i>Dinner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="entry : ${weeklyPlan}" th:classappend="${entry.key.name() == todayName ? 'today-row' : ''}">
+            <td class="day-cell">
+              <span th:text="${entry.key}">MON</span>
+              <span th:if="${entry.key.name() == todayName}" class="today-tag">TODAY</span>
+            </td>
+            <td>
+              <div th:if="${entry.value['BREAKFAST'] != null}">
+                <span class="meal-nm" th:text="${entry.value['BREAKFAST'].items}">—</span>
+                <div class="meal-meta-row">
+                  <span class="cat-dot" th:classappend="${entry.value['BREAKFAST'].mealCategory == 'Pure Veg' ? 'cd-veg' : 'cd-nonveg'}"></span>
+                  <span class="meta-txt" th:text="${entry.value['BREAKFAST'].calories} + ' kcal · ' + ${entry.value['BREAKFAST'].protein} + 'g'">—</span>
+                </div>
+              </div>
+              <span th:unless="${entry.value['BREAKFAST'] != null}" class="empty-cell">Not set</span>
+            </td>
+            <td>
+              <div th:if="${entry.value['LUNCH'] != null}">
+                <span class="meal-nm" th:text="${entry.value['LUNCH'].items}">—</span>
+                <div class="meal-meta-row">
+                  <span class="cat-dot" th:classappend="${entry.value['LUNCH'].mealCategory == 'Pure Veg' ? 'cd-veg' : 'cd-nonveg'}"></span>
+                  <span class="meta-txt" th:text="${entry.value['LUNCH'].calories} + ' kcal · ' + ${entry.value['LUNCH'].protein} + 'g'">—</span>
+                </div>
+              </div>
+              <span th:unless="${entry.value['LUNCH'] != null}" class="empty-cell">Not set</span>
+            </td>
+            <td>
+              <div th:if="${entry.value['DINNER'] != null}">
+                <span class="meal-nm" th:text="${entry.value['DINNER'].items}">—</span>
+                <div class="meal-meta-row">
+                  <span class="cat-dot" th:classappend="${entry.value['DINNER'].mealCategory == 'Pure Veg' ? 'cd-veg' : 'cd-nonveg'}"></span>
+                  <span class="meta-txt" th:text="${entry.value['DINNER'].calories} + ' kcal · ' + ${entry.value['DINNER'].protein} + 'g'">—</span>
+                </div>
+              </div>
+              <span th:unless="${entry.value['DINNER'] != null}" class="empty-cell">Not set</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: PROFILE -->
+  <div id="tab-profile" class="tab-pane">
+    <div class="section-hdr"><h2>Profile &amp; Settings</h2></div>
+    <div class="profile-card">
+      <form th:action="@{/customer/profile/update}" method="post">
+        <div class="profile-grid">
+          <div class="fg">
+            <label class="fg-label">Full Name</label>
+            <input type="text" name="fullName" class="fg-input" th:value="${user.fullName}" required placeholder="Your full name">
+          </div>
+          <div class="fg">
+            <label class="fg-label">Mobile Number</label>
+            <input type="text" name="mobileNumber" class="fg-input" th:value="${user.mobileNumber}" required placeholder="10-digit mobile">
+          </div>
+          <div class="fg full">
+            <label class="fg-label">Delivery Address / Hostel Room</label>
+            <textarea name="fullAddress" class="fg-textarea" required th:text="${user.fullAddress}" placeholder="Your full delivery address"></textarea>
+          </div>
+          <div class="fg">
+            <label class="fg-label">Dietary Preference</label>
+            <select name="dietaryPreference" class="fg-select" required>
+              <option value="Pure Veg"  th:selected="${user.dietaryPreference == 'Pure Veg'}">🥦 Pure Veg (Satvik)</option>
+              <option value="Non-Veg"   th:selected="${user.dietaryPreference == 'Non-Veg'}">🍗 Non-Veg (Mix)</option>
+            </select>
+            <span class="fg-hint">Changing this updates your menu automatically.</span>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+            <a href="/customer/dashboard" class="btn-ghost">Cancel</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIVE TRACK MODAL -->
+<div class="modal-overlay" id="trackModalOverlay">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3><i class="fas fa-satellite-dish" style="color:var(--green)"></i> Live Driver Tracking</h3>
+      <button class="modal-close" onclick="closeTrackModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="trackMap"></div>
+    <div class="modal-foot"><i class="fas fa-info-circle" style="margin-right:6px"></i> Map refreshes every 3 seconds. Share the OTP with the rider when they arrive.</div>
+  </div>
+</div>
+
+<!-- RATE MEAL MODALS -->
+<div th:each="order : ${myOrders}">
+  <div th:if="${order.status.name() == 'DELIVERED'}" class="rate-overlay" th:id="'rateOverlay' + ${order.id}">
+    <div class="modal-box" style="max-width:440px">
+      <div class="modal-hdr">
+        <h3><i class="fas fa-star" style="color:var(--amber)"></i> Rate Your Meal</h3>
+        <button class="modal-close" th:onclick="'closeRateModal(' + ${order.id} + ')'"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="padding:22px">
+        <form th:action="@{/customer/review}" method="post">
+          <input type="hidden" name="orderId" th:value="${order.id}">
+          <div style="margin-bottom:16px">
+            <div class="fg-label" style="margin-bottom:8px">Your Rating</div>
+            <select name="rating" class="fg-select" required>
+              <option value="5">★★★★★ — Excellent!</option>
+              <option value="4">★★★★☆ — Good</option>
+              <option value="3">★★★☆☆ — Average</option>
+              <option value="2">★★☆☆☆ — Below Average</option>
+              <option value="1">★☆☆☆☆ — Poor</option>
+            </select>
+          </div>
+          <div style="margin-bottom:20px">
+            <div class="fg-label" style="margin-bottom:8px">Comment</div>
+            <textarea name="comments" class="fg-textarea" placeholder="Leave a note for the chef…" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="btn-order"><i class="fas fa-paper-plane"></i> Submit Review (+10 pts)</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg') || url.searchParams.has('error')) {
+      setTimeout(() => { url.searchParams.delete('msg'); url.searchParams.delete('error'); window.history.replaceState({}, '', url.href); }, 100);
+    }
+  }
+
+  var map, driverMarker, destMarker, trackInterval;
+  function openTrackModal(id) { document.getElementById('trackModalOverlay').classList.add('open'); initMap(id); }
+  function closeTrackModal()  { document.getElementById('trackModalOverlay').classList.remove('open'); clearInterval(trackInterval); if (map) { map.remove(); map = null; } }
+  function openRateModal(id)  { document.getElementById('rateOverlay' + id).classList.add('open'); }
+  function closeRateModal(id) { document.getElementById('rateOverlay' + id).classList.remove('open'); }
+
+  document.querySelectorAll('.modal-overlay,.rate-overlay').forEach(o => {
+    o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+  });
+
+  function initMap(orderId) {
+    if (map) { map.remove(); map = null; }
+    map = L.map('trackMap').setView([18.9220, 72.8347], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+    var destIcon   = L.divIcon({ className:'', html:'<div style="background:#4ADE80;width:14px;height:14px;border-radius:50%;border:2px solid white"></div>' });
+    var driverIcon = L.divIcon({ className:'', html:'<div style="background:#FBBF24;width:12px;height:12px;border-radius:50%;border:2px solid white"></div>' });
+    destMarker   = L.marker([18.9270, 72.8390], { icon: destIcon   }).addTo(map).bindPopup('<b>Your Location</b>');
+    driverMarker = L.marker([18.9220, 72.8347], { icon: driverIcon }).addTo(map).bindPopup('Driver en route').openPopup();
+    clearInterval(trackInterval);
+    trackInterval = setInterval(() => pollTrack(orderId), 3000);
+    pollTrack(orderId);
+  }
+  function pollTrack(orderId) {
+    fetch('/customer/order/' + orderId + '/track')
+      .then(r => r.json())
+      .then(data => {
+        if (!map) return;
+        if (data.status === 'DELIVERED') { clearInterval(trackInterval); if (driverMarker) driverMarker.setPopupContent('Delivered!').openPopup(); return; }
+        if (data.driverLat && data.driverLon) { driverMarker.setLatLng([data.driverLat, data.driverLon]); if (data.destLat && data.destLon) destMarker.setLatLng([data.destLat, data.destLon]); }
+      }).catch(() => {});
+  }
+</script>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+var todaysMenus = /*[[${todaysMenus}]]*/ [];
+if (!todaysMenus) todaysMenus = [];
+const FALLBACK = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80';
+const elItems = document.getElementById('displayItems');
+const elCal   = document.getElementById('displayCalories');
+const elPro   = document.getElementById('displayProtein');
+const elBadge = document.getElementById('displayCategoryBadge');
+const elImg   = document.getElementById('mealImage');
+
+function updateMenu(slot) {
+  var m = todaysMenus.find(x => x.mealType === slot);
+  if (m) {
+    elItems.textContent = m.items || (slot + ' Special');
+    elCal.textContent   = m.calories || '—';
+    elPro.textContent   = m.protein  || '—';
+    elImg.style.opacity = '0';
+    setTimeout(() => { elImg.src = (m.imageUrl && m.imageUrl.trim()) ? m.imageUrl : FALLBACK; elImg.style.opacity = '1'; }, 150);
+    if (elBadge) {
+      elBadge.style.display = 'inline-flex';
+      elBadge.className = 'meal-cat-badge';
+      if (m.mealCategory === 'Pure Veg') { elBadge.innerHTML = '<i class="fas fa-leaf" style="margin-right:4px"></i>Pure Veg'; elBadge.classList.add('cat-veg'); }
+      else { elBadge.innerHTML = '<i class="fas fa-drumstick-bite" style="margin-right:4px"></i>Non-Veg'; elBadge.classList.add('cat-nonveg'); }
+    }
+  } else {
+    elItems.textContent = slot + ' Special (Menu not set yet)';
+    elCal.textContent = '—'; elPro.textContent = '—';
+    if (elBadge) elBadge.style.display = 'none';
+    elImg.src = FALLBACK;
+  }
+}
+
+document.querySelectorAll('input[name="mealType"]').forEach(r => r.addEventListener('change', () => updateMenu(r.value)));
+window.addEventListener('DOMContentLoaded', () => {
+  var first = document.querySelector('input[name="mealType"]:not(:disabled)');
+  if (first) { first.checked = true; updateMenu(first.value); }
+  else { elItems.textContent = 'All meal slots closed for today.'; }
+});
+/*]]>*/
+</script>
+</body>
+</html>

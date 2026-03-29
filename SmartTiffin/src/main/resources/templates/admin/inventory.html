@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Manager | NutriDeliver</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        .custom-navbar { background-color: #1e2124; }
+        .nav-tabs { border-bottom: 2px solid #dee2e6; gap: 5px; }
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 8px 8px 0 0;
+            padding: 12px 25px;
+            font-weight: 600;
+            color: #6c757d;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+        .nav-tabs .nav-link:hover { color: #212529; }
+        .nav-tabs .nav-link.active {
+            background-color: white;
+            color: #198754;
+            border-bottom: 3px solid #198754;
+        }
+        .glass-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05); }
+        .progress { height: 8px; border-radius: 4px; background-color: #e9ecef; }
+        .batch-table-container { max-height: 400px; overflow-y: auto; }
+        .batch-table-container thead th { position: sticky; top: 0; z-index: 1; background-color: #f8f9fa; }
+
+        /* Custom styling for sleek Hub Dropdown */
+        .hub-select-wrapper select {
+            appearance: none;
+            padding-right: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 10px;
+        }
+
+        /* Hide spin buttons on number inputs for cleaner UI */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- FULLY RESPONSIVE NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark custom-navbar py-2 sticky-top shadow-sm">
+    <div class="container-fluid px-3">
+
+        <a class="navbar-brand fw-bold me-3" href="#">
+            <i class="fas fa-shield-alt text-warning me-2"></i><span class="d-none d-sm-inline">ADMIN & DISPATCH</span>
+        </a>
+
+        <!-- Mobile Toggle Button -->
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+
+            <!-- THE HUB CONTEXT SWITCHER (Styled nicely inside navbar) -->
+            <div th:if="${selectedHub != null}" class="d-flex align-items-center bg-dark rounded-pill px-3 py-1 me-lg-4 my-2 my-lg-0 border border-secondary border-opacity-50 hub-select-wrapper">
+                <form th:if="${isSuperAdmin}" action="/admin/inventory" method="get" class="d-flex align-items-center m-0 w-100">
+                    <i class="fas fa-map-marker-alt text-white-50 me-2 small"></i>
+                    <select name="hubId" class="form-select form-select-sm bg-transparent text-white border-0 fw-bold shadow-none p-0" onchange="this.form.submit()" style="cursor:pointer; min-width: 130px;">
+                        <option th:each="h : ${allHubs}" th:value="${h.id}" th:text="${h.name}" th:selected="${h.id == selectedHub.id}" class="text-dark"></option>
+                    </select>
+                </form>
+                <div th:if="${isHubManager}" class="text-white fw-bold small text-nowrap">
+                    <i class="fas fa-building text-primary me-2"></i><span th:text="${selectedHub.name}"></span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 px-3 rounded-pill transition-all" href="/admin/dashboard"><i class="fas fa-home me-1"></i> Live Orders</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active text-white fw-bold px-3 rounded-pill" style="background-color: rgba(255,193,7,0.15); color: #ffc107 !important;" href="/admin/inventory"><i class="fas fa-boxes me-1"></i> Inventory</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 px-3 rounded-pill transition-all" th:href="@{/admin/reports(hubId=${selectedHub?.id})}"><i class="fas fa-chart-pie me-1"></i> Reports</a>
+                </li>
+            </ul>
+
+            <!-- User Profile & Logout -->
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+                <div id="modeIndicator" class="d-none d-xl-block"></div>
+                <div class="d-flex align-items-center bg-dark rounded-pill px-3 py-1 border border-secondary border-opacity-50">
+                    <i class="fas fa-user-circle text-white-50 me-2"></i>
+                    <span class="text-white small fw-bold me-2" th:text="${adminUser != null ? adminUser.fullName : 'Admin'}">Admin</span>
+                    <span th:if="${isSuperAdmin}" class="badge bg-danger rounded-pill"><i class="fas fa-crown"></i></span>
+                    <span th:if="${isHubManager}" class="badge bg-primary rounded-pill"><i class="fas fa-building"></i></span>
+                </div>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-3 w-100">Log Out</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hidden Input to pass Hub Context to JavaScript -->
+<input type="hidden" id="currentHubId" th:value="${selectedHub != null ? selectedHub.id : ''}">
+
+<div class="container-fluid px-4 py-4" th:if="${selectedHub != null}">
+    <div class="row mb-4">
+        <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h3 class="fw-bold text-dark mb-1">Inventory Management System</h3>
+                <p class="text-muted mb-0">High-precision tracking for <strong><span th:text="${selectedHub.name}">Selected Hub</span></strong>.</p>
+            </div>
+
+            <!-- VIEWER BANNER -->
+            <div th:if="${isViewer}" class="alert alert-secondary border-0 mb-0 d-flex align-items-center py-2 px-3 shadow-sm">
+                <i class="fas fa-eye me-2"></i> <strong>View Only Mode</strong>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4 flex-nowrap overflow-auto" id="imsTabs" role="tablist" style="white-space: nowrap;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active d-flex align-items-center" id="warehouse-tab" data-bs-toggle="tab" data-bs-target="#warehouse" type="button" role="tab" onclick="loadWarehouse()">
+                <i class="fas fa-warehouse me-2"></i> Live Warehouse
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center" id="issuance-tab" data-bs-toggle="tab" data-bs-target="#issuance" type="button" role="tab">
+                <i class="fas fa-file-export me-2 text-primary"></i> 1. Pre-Shift Issuance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center" id="reconciliation-tab" data-bs-toggle="tab" data-bs-target="#reconciliation" type="button" role="tab">
+                <i class="fas fa-file-import me-2 text-warning"></i> 2. Post-Shift Reconciliation
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="imsTabContent">
+
+        <!-- WAREHOUSE TAB (Fixed Full-Width Layout) -->
+        <div class="tab-pane fade show active" id="warehouse" role="tabpanel">
+            <div class="card glass-card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-success"><i class="fas fa-database me-2"></i> Live Stock (<span th:text="${selectedHub.name}"></span>)</h5>
+                        <small class="text-muted">Real-time view of Storage vs. Kitchen Prep Area</small>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/admin/reports(hubId=${selectedHub.id})}" class="btn btn-outline-primary fw-bold shadow-sm rounded-pill px-3">
+                            <i class="fas fa-file-invoice me-1"></i> View Logs
+                        </a>
+                        <button th:unless="${isViewer}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#restockModal">
+                            <i class="fas fa-plus-circle me-1"></i> Receive Batch / Invoice
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 py-3">Material Name</th>
+                            <th>Unit</th>
+                            <th>Storage Stock</th>
+                            <th>Kitchen WIP</th>
+                            <th style="width: 25%;">Health</th>
+                            <th class="text-end pe-4">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="warehouseBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ISSUANCE TAB -->
+        <div class="tab-pane fade" id="issuance" role="tabpanel">
+            <div class="card glass-card border-0 shadow-sm" style="border-top: 4px solid #0d6efd !important;">
+                <div class="card-header bg-white border-bottom p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-truck-loading me-2"></i>Kitchen Indent & Issuance</h5>
+                        <small class="text-muted">Issue stock based on today's forecasted demand</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <select id="issueShiftSelect" class="form-select fw-bold bg-light rounded-pill px-3" onchange="loadIssuanceData(this.value)" autocomplete="off" aria-label="Select Shift">
+                            <option value="">Select Shift...</option>
+                            <option value="BREAKFAST">Today - Breakfast</option>
+                            <option value="LUNCH">Today - Lunch</option>
+                            <option value="DINNER">Today - Dinner</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body py-5" id="issuanceBody">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-dolly fs-1 mb-3 opacity-25"></i>
+                        <h5>Select a shift above to calculate recipe requirements.</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECONCILIATION TAB -->
+        <div class="tab-pane fade" id="reconciliation" role="tabpanel">
+            <div class="card glass-card border-0 shadow-sm" style="border-top: 4px solid #fd7e14 !important;">
+                <div class="card-header bg-white border-bottom p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color: #fd7e14;"><i class="fas fa-clipboard-check me-2"></i>Shift Reconciliation Loop</h5>
+                        <small class="text-muted">Record usage & waste; leftover stock returns to storage</small>
+                    </div>
+                    <select id="shiftSelect" class="form-select fw-bold bg-light rounded-pill px-3" style="max-width: 250px;" onchange="loadReconciliationData(this.value)" autocomplete="off" aria-label="Select Shift">
+                        <option value="">Select Shift to Reconcile...</option>
+                        <option value="BREAKFAST">Today - Breakfast</option>
+                        <option value="LUNCH">Today - Lunch</option>
+                        <option value="DINNER">Today - Dinner</option>
+                    </select>
+                </div>
+                <div class="card-body py-5" id="reconciliationBody">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-clipboard-list fs-1 mb-3 opacity-25"></i>
+                        <h5>Select a shift above to start reconciliation.</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NO HUB SELECTED STATE -->
+<div th:if="${selectedHub == null}" class="container-fluid px-4 py-5 text-center">
+    <i class="fas fa-building fs-1 text-muted opacity-25 mb-3 mt-5"></i>
+    <h4 class="text-muted fw-bold">No Active Hub Selected</h4>
+    <p class="text-muted">Please select a hub from the dropdown menu in the navigation bar to view its inventory.</p>
+</div>
+
+<!-- RESTOCK MODAL (hidden if Viewer) -->
+<div th:unless="${isViewer}" class="modal fade" id="restockModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white py-3 border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Receive Batch / Invoice</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <form id="restockForm">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-3 text-muted"><i class="fas fa-building me-1"></i> Invoice Details</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="rsSupplier" class="form-label text-uppercase small fw-bold text-muted">SUPPLIER NAME <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="rsSupplier" placeholder="e.g., Metro Wholesale" required autocomplete="off">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="rsInvoice" class="form-label text-uppercase small fw-bold text-muted">INVOICE NUMBER <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control text-uppercase" id="rsInvoice" placeholder="e.g., INV-2026-041" required autocomplete="off">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="rsReceivedBy" class="form-label text-uppercase small fw-bold text-muted">RECEIVED BY <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="rsReceivedBy" th:value="${adminUser != null ? adminUser.fullName : ''}" placeholder="e.g., Admin Manager" required autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                            <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-boxes me-2 text-success"></i> Materials Received</h6>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" onclick="addRestockRow()">
+                                <i class="fas fa-plus me-1"></i> Add Material
+                            </button>
+                        </div>
+                        <div class="batch-table-container p-0">
+                            <table class="table align-middle mb-0" id="restockItemsTable">
+                                <thead class="bg-light small text-muted text-uppercase">
+                                <tr>
+                                    <th style="width: 22%" class="ps-3">MATERIAL <span class="text-danger">*</span></th>
+                                    <th style="width: 16%">QUANTITY <span class="text-danger">*</span></th>
+                                    <th style="width: 20%">STORAGE LOC. <span class="text-danger">*</span></th>
+                                    <th style="width: 16%">BATCH NO.</th>
+                                    <th style="width: 16%">EXPIRY DATE</th>
+                                    <th style="width: 10%" class="text-center">ACTION</th>
+                                </tr>
+                                </thead>
+                                <tbody id="restockRows"></tbody>
+                            </table>
+                        </div>
+                        <div id="emptyStateMsg" class="text-center py-5 text-muted d-none">
+                            <i class="fas fa-box-open fs-2 mb-2 opacity-25"></i>
+                            <p class="mb-0">No materials added. Click "Add Material" to start.</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer py-3 border-0 bg-white">
+                <button type="button" class="btn btn-light fw-bold px-4 rounded-pill border" data-bs-dismiss="modal" id="btnRestockCancel">Cancel</button>
+                <button type="button" class="btn btn-success px-5 fw-bold rounded-pill shadow-sm" onclick="submitBatchRestock()" id="btnRestockSubmit">
+                    <i class="fas fa-check-double me-2"></i> Process Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const IS_PRODUCTION_MODE = false;
+    let stockLimits = {};
+    let availableMaterials = [];
+    let rowCounter = 0;
+
+    // Check if the user is a viewer
+    const IS_VIEWER = /*[[${isViewer != null ? isViewer : false}]]*/ false;
+
+    // Get current Hub ID from hidden field
+    function getHubId() {
+        const hubInput = document.getElementById('currentHubId');
+        return hubInput ? hubInput.value : '';
+    }
+
+    function blockInvalidChars(event) {
+        if (['e', 'E', '-', '+'].includes(event.key)) {
+            event.preventDefault();
+        }
+    }
+
+    function toggleButtonLoading(btnId, isLoading, defaultText = "Submit") {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        if (isLoading) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Processing...`;
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = defaultText;
+        }
+    }
+
+    async function loadWarehouse() {
+        const hubId = getHubId();
+        if (!hubId) return;
+
+        const tableBody = document.getElementById('warehouseBody');
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5"><i class="fas fa-spinner fa-spin text-success fs-3"></i> <span class="text-muted ms-2">Syncing Hub Data...</span></td></tr>`;
+        try {
+            // Append hubId to API call
+            const response = await fetch(`/api/inventory/warehouse/live?hubId=${hubId}`);
+            const data = await response.json();
+            tableBody.innerHTML = '';
+            availableMaterials = [];
+            data.forEach(inv => {
+                const materialName = inv.material ? inv.material.name : 'Unknown';
+                const materialId = inv.material ? inv.material.id : '';
+                const unitStr = inv.material ? inv.material.unit : 'Unit';
+                const whStock = parseFloat(inv.currentStock).toFixed(2);
+                const kitStock = parseFloat(inv.kitchenStock || 0).toFixed(2);
+                const max = inv.maxCapacity || 500;
+                const threshold = inv.alertThreshold || 50;
+                const capacityPercent = Math.min(((whStock / max) * 100), 100).toFixed(0);
+
+                let healthColor = 'bg-success';
+                let statusText = 'HEALTHY';
+                let statusClass = 'border border-success text-success bg-success bg-opacity-10';
+
+                if (parseFloat(whStock) <= parseFloat(threshold)) {
+                    healthColor = 'bg-danger';
+                    statusText = 'LOW STOCK';
+                    statusClass = 'border border-danger text-danger bg-danger bg-opacity-10';
+                } else if (capacityPercent < 40) {
+                    healthColor = 'bg-warning';
+                    statusText = 'REORDER SOON';
+                    statusClass = 'border border-warning text-dark bg-warning bg-opacity-10';
+                }
+
+                if (materialId) {
+                    stockLimits[materialId] = { current: parseFloat(inv.currentStock) || 0, kitchen: parseFloat(inv.kitchenStock) || 0, max: parseFloat(inv.maxCapacity) || 0, unit: unitStr, name: materialName };
+                    availableMaterials.push({ id: materialId, name: materialName, unit: unitStr });
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="ps-4 fw-bold text-dark">${materialName}</td>
+                    <td><span class="badge bg-light text-secondary border">${unitStr}</span></td>
+                    <td class="fw-bold fs-5 text-success"><i class="fas fa-lock small me-2 text-muted"></i>${whStock}</td>
+                    <td class="fw-bold fs-5 text-dark"><i class="fas fa-fire small me-2 text-muted"></i>${kitStock}</td>
+                    <td>
+                         <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted fw-bold">${whStock} / ${max}</span>
+                            <span class="fw-bold text-dark">${capacityPercent}%</span>
+                         </div>
+                         <div class="progress shadow-sm">
+                            <div class="progress-bar ${healthColor}" style="width: ${capacityPercent}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <span class="badge ${statusClass} p-2"><i class="fas fa-info-circle me-1"></i> ${statusText}</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            if(data.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fas fa-box-open fs-2 mb-2 opacity-25 d-block"></i>No inventory found for this hub.</td></tr>`;
+            }
+        } catch (e) { tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4 border-0">Failed to load stock.</td></tr>`; }
+    }
+
+    function addRestockRow() {
+        rowCounter++;
+        const rowId = 'rsRow_' + rowCounter;
+        let materialOptions = '<option value="">Select Material...</option>';
+        availableMaterials.forEach(m => { materialOptions += `<option value="${m.id}" data-unit="${m.unit}">${m.name}</option>`; });
+
+        const rowHTML = `
+            <tr id="${rowId}" class="bg-white">
+                <td class="p-2 ps-3"><select class="form-select form-select-sm fw-bold rs-material" aria-label="Select Material" required onchange="updateRowUnit('${rowId}')">${materialOptions}</select></td>
+                <td class="p-2">
+                    <div class="input-group input-group-sm">
+                        <input type="number" step="0.01" min="0" class="form-control fw-bold rs-qty" required oninput="validateRowCapacity('${rowId}')" onkeydown="blockInvalidChars(event)" autocomplete="off" aria-label="Restock Quantity">
+                        <span class="input-group-text bg-light text-muted rs-unit">UNIT</span>
+                    </div>
+                    <small class="rs-helper d-none mt-1" style="font-size:0.7rem;"></small>
+                </td>
+                <td class="p-2">
+                    <select class="form-select form-select-sm rs-loc" aria-label="Select Location" required>
+                        <option value="">Location...</option>
+                        <option value="Shelf A1 - Dry Goods">Shelf A1 - Dry Goods</option>
+                        <option value="Cold Room 1 - Vegetables">Cold Room 1 - Vegetables</option>
+                        <option value="Freezer A">Freezer A</option>
+                    </select>
+                </td>
+                <td class="p-2"><input type="text" class="form-control form-control-sm rs-batch" placeholder="Lot..." aria-label="Batch Number" autocomplete="off"></td>
+                <td class="p-2"><input type="date" class="form-control form-control-sm rs-expiry" aria-label="Expiry Date"></td>
+                <td class="text-center p-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm border-0 rounded-circle" onclick="removeRestockRow('${rowId}')"><i class="fas fa-times"></i></button>
+                </td>
+            </tr>
+        `;
+        document.getElementById('restockRows').insertAdjacentHTML('beforeend', rowHTML);
+        checkEmptyState();
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+        document.querySelector(`#${rowId} .rs-expiry`).setAttribute('min', tomorrow.toISOString().split('T')[0]);
+    }
+
+    function removeRestockRow(rowId) { document.getElementById(rowId)?.remove(); checkEmptyState(); }
+    function checkEmptyState() {
+        const rowCount = document.getElementById('restockRows').children.length;
+        document.getElementById('emptyStateMsg').classList.toggle('d-none', rowCount > 0);
+    }
+    function updateRowUnit(rowId) {
+        const select = document.querySelector(`#${rowId} .rs-material`);
+        document.querySelector(`#${rowId} .rs-unit`).textContent = select.options[select.selectedIndex].getAttribute('data-unit') || 'UNIT';
+        validateRowCapacity(rowId);
+    }
+
+    function validateRowCapacity(rowId) {
+        const row = document.getElementById(rowId);
+        const matId = row.querySelector('.rs-material').value;
+        const qtyInput = row.querySelector('.rs-qty');
+        const helper = row.querySelector('.rs-helper');
+
+        let qty = parseFloat(qtyInput.value);
+        if (isNaN(qty) || qty < 0) {
+            qtyInput.value = '';
+            qty = 0;
+        }
+
+        if (matId && stockLimits[matId] && stockLimits[matId].max > 0) {
+            const available = stockLimits[matId].max - stockLimits[matId].current;
+            helper.innerHTML = `${available.toFixed(2)} space left`;
+            helper.className = "text-success fw-bold d-block mt-1 rs-helper";
+
+            if (qty > available) {
+                helper.innerHTML = `Max ${available.toFixed(2)} allowed!`;
+                helper.className = "text-danger fw-bold d-block mt-1 rs-helper";
+                qtyInput.value = available.toFixed(2);
+            }
+        } else { helper.className = "d-none rs-helper"; }
+    }
+
+    async function submitBatchRestock() {
+        const hubId = getHubId();
+        const supplier = document.getElementById('rsSupplier').value.trim();
+        const invoice = document.getElementById('rsInvoice').value.trim();
+        const receivedBy = document.getElementById('rsReceivedBy').value.trim();
+        let errors = [];
+
+        if (!supplier || !invoice || !receivedBy) errors.push("Invoice Header details are incomplete.");
+        const rows = document.querySelectorAll('#restockRows tr');
+        if (rows.length === 0) return alert("You must add at least one material row.");
+
+        const items = [];
+        let materialTotals = {};
+
+        rows.forEach((row, index) => {
+            const matId = row.querySelector('.rs-material').value;
+            const qty = parseFloat(row.querySelector('.rs-qty').value) || 0;
+            const loc = row.querySelector('.rs-loc').value;
+
+            if (!matId || qty <= 0 || !loc) errors.push(`Row ${index + 1} is incomplete or invalid.`);
+            else {
+                items.push({ materialId: parseInt(matId), quantity: qty, storageLocation: loc, batchNumber: row.querySelector('.rs-batch').value.trim(), expiryDate: row.querySelector('.rs-expiry').value });
+                materialTotals[matId] = (materialTotals[matId] || 0) + qty;
+            }
+        });
+
+        for (const [matId, totalQty] of Object.entries(materialTotals)) {
+            if (stockLimits[matId] && stockLimits[matId].max > 0 && totalQty > (stockLimits[matId].max - stockLimits[matId].current)) {
+                errors.push(`Global Capacity Exceeded for ${stockLimits[matId].name}.`);
+            }
+        }
+        if (errors.length > 0) return alert("Validation Failed:\n- " + errors.join("\n- "));
+
+        toggleButtonLoading("btnRestockSubmit", true);
+        document.getElementById("btnRestockCancel").disabled = true;
+
+        try {
+            // Append hubId to API call
+            const res = await fetch(`/api/inventory/restock/batch?hubId=${hubId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+                body: JSON.stringify({ supplier, invoiceNumber: invoice, receivedBy, items })
+            });
+            if(res.ok) { alert("Invoice successfully logged!"); location.reload(); }
+            else alert("Failed to receive invoice: " + await res.text());
+        } catch(e) { alert("Server connection error."); }
+        finally { toggleButtonLoading("btnRestockSubmit", false, `<i class="fas fa-check-double me-2"></i> Process Invoice`); document.getElementById("btnRestockCancel").disabled = false; }
+    }
+
+    async function loadIssuanceData(mealType) {
+        const hubId = getHubId();
+        const body = document.getElementById('issuanceBody');
+        if(!mealType) return;
+        if (IS_PRODUCTION_MODE) {
+            const now = new Date();
+            const curTime = now.getHours() * 100 + now.getMinutes();
+            const cutoffs = { 'BREAKFAST': 800, 'LUNCH': 1200, 'DINNER': 1900 };
+            if (curTime > cutoffs[mealType]) {
+                body.innerHTML = `<div class="alert alert-danger mx-4 text-center border-0 shadow-sm"><i class="fas fa-clock-rotate-left fs-3 mb-2 d-block"></i><strong>WINDOW EXPIRED:</strong> Issuance for ${mealType} closed at ${Math.floor(cutoffs[mealType]/100)}:00.</div>`;
+                return;
+            }
+        }
+
+        body.innerHTML = `<div class="text-center py-5 text-primary"><i class="fas fa-spinner fa-spin fs-2 me-2"></i> <span class="text-muted">Forecasting via Recipes...</span></div>`;
+        try {
+            // Append hubId to API call
+            const response = await fetch(`/api/inventory/issuance/forecast?mealType=${mealType}&hubId=${hubId}`);
+            const data = await response.json();
+            if(!data || data.length === 0) return body.innerHTML = `<div class="text-center text-muted py-4">No active PENDING orders found.</div>`;
+
+            let html = `<div class="table-responsive px-3 pb-3"><table class="table border-0 align-middle"><thead class="bg-light text-muted small text-uppercase"><tr><th class="ps-3 py-3">Raw Material</th><th>Forecast (incl. Yield)</th><th style="width: 250px;">Issue to Kitchen</th></tr></thead><tbody>`;
+
+            data.forEach(item => {
+                const limitInfo = stockLimits[item.materialId];
+                html += `<tr>
+                    <td class="ps-3"><div class="fw-bold text-dark">${item.materialName}</div><small class="text-muted"><i class="fas fa-lock me-1"></i>Warehouse Stock: ${limitInfo ? limitInfo.current.toFixed(2) : "0.00"} ${item.unit}</small></td>
+                    <td class="text-primary fw-bold">${parseFloat(item.predictedAmount).toFixed(2)} ${item.unit}</td>
+                    <td>
+                        <div class="input-group">
+                            <input type="number" step="0.01" min="0" class="form-control issue-input fw-bold" data-id="${item.materialId}" value="${parseFloat(item.predictedAmount).toFixed(2)}" oninput="validateIssueInput(this)" onkeydown="blockInvalidChars(event)" autocomplete="off" aria-label="Quantity to Issue" ${IS_VIEWER ? 'disabled' : ''}>
+                            <span class="input-group-text bg-light text-muted">${item.unit}</span>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            if(!IS_VIEWER) {
+                html += `<div class="text-end mt-4"><button class="btn btn-primary fw-bold px-5 py-3 rounded-pill shadow" id="btnSubmitIssuance" onclick="submitIssuance('${mealType}')"><i class="fas fa-dolly me-2"></i> CONFIRM & ISSUE TO WIP</button></div>`;
+            }
+            html += `</div>`;
+            body.innerHTML = html;
+        } catch(e) { body.innerHTML = `<div class="text-danger text-center py-4">Server error loading forecast.</div>`; }
+    }
+
+    function validateIssueInput(input) {
+        let val = parseFloat(input.value);
+        if (isNaN(val) || val < 0) {
+            input.value = '';
+            return;
+        }
+        let limitInfo = stockLimits[input.dataset.id];
+        if (limitInfo && val > limitInfo.current) {
+             input.value = limitInfo.current.toFixed(2);
+        }
+    }
+
+    async function submitIssuance(mealType) {
+        const hubId = getHubId();
+        const payload = {}; let errors = []; let total = 0;
+        document.querySelectorAll('.issue-input').forEach(input => {
+            let val = parseFloat(input.value) || 0;
+            if (val > 0 && stockLimits[input.dataset.id] && val > stockLimits[input.dataset.id].current) errors.push(`Not enough stock for ID ${input.dataset.id}`);
+            if (val > 0) { payload[input.dataset.id] = val; total += val; }
+        });
+        if (total === 0) return alert("Enter valid quantity.");
+        if (errors.length > 0) return alert(errors.join("\n"));
+
+        toggleButtonLoading("btnSubmitIssuance", true);
+        try {
+            // Append hubId to API call
+            const res = await fetch(`/api/inventory/issuance/confirm?mealType=${mealType}&hubId=${hubId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if(res.ok) { alert("Stock issued."); location.reload(); } else alert("Failed: " + await res.text());
+        } catch(e) { alert("Network Error"); } finally { toggleButtonLoading("btnSubmitIssuance", false, `<i class="fas fa-dolly me-2"></i> CONFIRM & ISSUE TO WIP`); }
+    }
+
+    async function loadReconciliationData(mealType) {
+        const hubId = getHubId();
+        const body = document.getElementById('reconciliationBody');
+        if(!mealType) return;
+        body.innerHTML = `<div class="text-center py-5 text-warning"><i class="fas fa-spinner fa-spin fs-2 me-2"></i> <span class="text-muted">Fetching Logs...</span></div>`;
+
+        try {
+            // Append hubId to API call
+            const response = await fetch(`/api/inventory/reconciliation/forecast?mealType=${mealType}&hubId=${hubId}`);
+            const data = await response.json();
+            if(!data || data.length === 0) return body.innerHTML = `<div class="text-center text-muted py-4">No delivered orders found for reconciliation.</div>`;
+
+            let tableHTML = `<div class="table-responsive px-3 pb-3"><table class="table align-middle border"><thead class="bg-light text-muted small text-uppercase"><tr><th class="ps-3 py-3">Material</th><th>Planned (Forecast)</th><th style="width: 350px;">Kitchen Log (Usage + Waste)</th><th class="text-center">Loop Status</th></tr></thead><tbody>`;
+
+            data.forEach(item => {
+                tableHTML += `<tr>
+                        <td class="ps-3"><div class="fw-bold text-dark">${item.materialName}</div></td>
+                        <td class="text-warning fw-bold">${parseFloat(item.predictedAmount).toFixed(2)} ${item.unit}</td>
+                        <td>
+                            <div class="input-group mb-1"><span class="input-group-text bg-light text-muted" style="width:90px">COOKED</span><input type="number" min="0" step="0.01" class="form-control usage-input fw-bold text-success" data-id="${item.materialId}" value="${parseFloat(item.predictedAmount).toFixed(2)}" oninput="validatePositive(this)" onkeydown="blockInvalidChars(event)" autocomplete="off" aria-label="Cooked Quantity" ${IS_VIEWER ? 'disabled' : ''}></div>
+                            <div class="input-group"><span class="input-group-text text-danger border-danger bg-danger bg-opacity-10" style="width:90px;">WASTED</span><input type="number" min="0" step="0.01" class="form-control waste-input border-danger fw-bold text-danger" data-id="${item.materialId}" value="0.00" oninput="validatePositive(this)" onkeydown="blockInvalidChars(event)" autocomplete="off" aria-label="Wasted Quantity" ${IS_VIEWER ? 'disabled' : ''}></div>
+                        </td>
+                        <td class="text-center"><span class="badge border border-success text-success bg-success bg-opacity-10 p-2"><i class="fas fa-redo me-1"></i> AUTO-RETURN</span></td>
+                    </tr>`;
+            });
+            tableHTML += `</tbody></table>`;
+            if(!IS_VIEWER) {
+                tableHTML += `<div class="card bg-light border border-secondary border-opacity-25 mt-3 mb-4 mx-2 shadow-sm"><div class="card-body py-3 d-flex align-items-center justify-content-between"><div class="text-muted small"><i class="fas fa-info-circle me-1"></i> Confirming will deduct usage and move any leftover stock back to <strong class="text-dark">Main Warehouse</strong>.</div><button class="btn btn-warning px-5 py-3 fw-bold shadow rounded-pill text-dark" id="btnSubmitRecon" onclick="submitReconciliation('${mealType}')"><i class="fas fa-check-double me-2"></i> FINALIZE & RETURN STOCK</button></div></div>`;
+            }
+            tableHTML += `</div>`;
+            body.innerHTML = tableHTML;
+        } catch (e) { body.innerHTML = `<div class="text-danger text-center py-4">Error connecting to server.</div>`; }
+    }
+
+    function validatePositive(input) {
+        let val = parseFloat(input.value);
+        if (isNaN(val) || val < 0) {
+            input.value = '';
+        }
+    }
+
+    async function submitReconciliation(mealType) {
+        const hubId = getHubId();
+        const usage = {}; const waste = {}; let total = 0;
+        document.querySelectorAll('.usage-input').forEach(i => { let val = parseFloat(i.value)||0; if(val>0){ usage[i.dataset.id] = val; total+=val; }});
+        document.querySelectorAll('.waste-input').forEach(i => { let val = parseFloat(i.value)||0; if(val>0){ waste[i.dataset.id] = val; total+=val; }});
+        if(total === 0) return alert("Log quantities first.");
+
+        toggleButtonLoading("btnSubmitRecon", true);
+        try {
+            // Append hubId to API call
+            const res = await fetch(`/api/inventory/reconciliation/confirm?mealType=${mealType}&hubId=${hubId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usage, waste }) });
+            if(res.ok) { alert("Reconciled & Returned."); location.reload(); } else alert("Failed: " + await res.text());
+        } catch (e) { alert("Network Error."); } finally { toggleButtonLoading("btnSubmitRecon", false, `<i class="fas fa-check-double me-2"></i> FINALIZE & RETURN STOCK`); }
+    }
+
+    window.onload = () => {
+        const modeIndicator = document.getElementById('modeIndicator');
+        if (modeIndicator) {
+            if (IS_PRODUCTION_MODE) { modeIndicator.innerHTML = `<span class="badge border border-success text-success bg-success bg-opacity-10 px-3 py-2 rounded-pill"><i class="fas fa-clock me-1"></i> Live Mode Active</span>`; }
+            else { modeIndicator.innerHTML = `<span class="badge border border-warning text-dark bg-warning bg-opacity-10 px-3 py-2 rounded-pill"><i class="fas fa-flask me-1"></i> Test Mode Active</span>`; }
+        }
+        // Only load if a hub is selected
+        if(getHubId()) {
+            loadWarehouse();
+        }
+
+        const modal = document.getElementById('restockModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', () => { document.getElementById('restockRows').innerHTML = ''; document.getElementById('restockForm').reset(); });
+            modal.addEventListener('show.bs.modal', () => { if(document.getElementById('restockRows').children.length === 0) addRestockRow(); });
+        }
+    };
+</script>
+</body>
+</html>

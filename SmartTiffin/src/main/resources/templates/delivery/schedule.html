@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner App | SmartTiffin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root{--brand:#FF5200;--brand-l:#FF6B35;--brand-soft:rgba(255,82,0,.10);--brand-mid:rgba(255,82,0,.18);--bg:#0C0C0C;--surface:#1A1A1A;--surface2:#222;--surface3:#2A2A2A;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--green:#4ADE80;--green-soft:rgba(74,222,128,.11);--amber:#FBBF24;--amber-soft:rgba(251,191,36,.11);--red:#F87171;--red-soft:rgba(248,113,113,.11);--blue:#60A5FA;--blue-soft:rgba(96,165,250,.11);--purple:#C084FC;--text:#F2F2F2;--text-2:#999;--text-3:#555;--r:14px;--r-xl:20px;--r-2xl:26px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;min-height:100vh}
+
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:300;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(12,12,12,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:var(--text)}
+    .brand-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),var(--brand-l));border-radius:10px;display:grid;place-items:center;font-size:17px;box-shadow:0 4px 14px rgba(255,82,0,.4)}
+    .brand-dot{color:var(--brand)}
+    .brand-sub{font-size:13px;font-weight:500;color:var(--text-2);margin-left:2px}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .earn-pill{display:flex;align-items:center;gap:7px;background:var(--amber-soft);border:1px solid rgba(251,191,36,.22);border-radius:50px;padding:5px 14px;font-size:13px;font-weight:800;color:var(--amber)}
+    .duty-pill{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:5px 14px;border-radius:50px;border:1px solid var(--border2);background:var(--surface)}
+    .duty-dot-on{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(74,222,128,.6);animation:pulseDot 1.5s infinite}
+    .duty-dot-off{width:8px;height:8px;border-radius:50%;background:var(--text-3)}
+    @keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+    .btn-toggle{display:flex;align-items:center;gap:6px;padding:6px 15px;border-radius:50px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s}
+    .btn-go-offline{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.3)}.btn-go-offline:hover{background:var(--red);color:#fff}
+    .btn-go-online{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.3)}.btn-go-online:hover{background:var(--green);color:#000}
+
+    /* PAGE */
+    .page{padding:28px 24px;max-width:1200px;margin:0 auto}
+    @keyframes riseUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ALERTS */
+    .alert{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:14px;font-weight:600;font-size:14px;margin-bottom:22px;animation:riseUp .3s ease}
+    .alert-s{background:var(--green-soft);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+    .alert-d{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+    /* SECTION LABEL */
+    .sec-lbl{font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:12px}
+
+    /* OFF-DUTY HERO */
+    .offduty-hero{position:relative;overflow:hidden;background:linear-gradient(120deg,#1c0900,#200d00,#0f1200);border:1px solid rgba(255,82,0,.14);border-radius:var(--r-2xl);padding:28px;margin-bottom:26px}
+    .offduty-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,82,0,.16) 0%,transparent 70%);pointer-events:none}
+    .oh-inner{position:relative;z-index:1}
+    .oh-inner h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;letter-spacing:-.4px;margin-bottom:5px}
+    .oh-inner p{font-size:13px;color:var(--text-2)}
+
+    /* GRID */
+    .offduty-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .onduty-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px}
+    .card+.card{margin-top:14px}
+    .card-title{font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:9px}
+    .card-title-icon{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:grid;place-items:center;font-size:13px;color:var(--text-2)}
+
+    /* OFFLINE BANNER inside card */
+    .offline-banner{display:flex;align-items:center;gap:12px;background:var(--amber-soft);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:13px 16px;margin-bottom:16px}
+    .offline-banner .ob-txt h4{font-weight:700;font-size:13px;color:var(--amber)}
+    .offline-banner .ob-txt p{font-size:12px;color:var(--text-2);margin-top:1px}
+
+    /* SLOT BUTTONS */
+    .slot-form{display:flex;flex-direction:column;gap:9px}
+    .slot-btn{display:flex;align-items:center;gap:13px;width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;color:var(--text);text-align:left;transition:all .2s}
+    .slot-btn:hover:not(:disabled){border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+    .slot-btn:disabled{opacity:.35;cursor:not-allowed}
+    .slot-ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
+    .si-b{background:rgba(251,191,36,.14);color:var(--amber)}.si-l{background:rgba(96,165,250,.14);color:var(--blue)}.si-d{background:rgba(192,132,252,.14);color:var(--purple)}
+    .slot-info{flex:1}
+    .slot-name{font-weight:700;display:block}
+    .slot-time{font-size:11px;color:var(--text-2);margin-top:1px}
+    .ended-tag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:var(--red-soft);color:var(--red);flex-shrink:0}
+    .offline-tag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:var(--amber-soft);color:var(--amber);border:1px solid rgba(251,191,36,.25);flex-shrink:0}
+
+    /* BOOKINGS TABLE */
+    .b-table{width:100%;border-collapse:collapse}
+    .b-table th{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);padding:0 0 11px;border-bottom:1px solid var(--border)}
+    .b-table td{padding:13px 0;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+    .b-table tr:last-child td{border-bottom:none}
+    .b-table th:last-child,.b-table td:last-child{text-align:right}
+    .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800}
+    .chip-slot{background:var(--surface2);color:var(--text-2);border:1px solid var(--border2)}
+    .chip-pending{background:var(--amber-soft);color:var(--amber)}
+    .chip-checked{background:var(--green-soft);color:var(--green)}
+
+    /* CHECK-IN CARD */
+    .checkin-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;border-left:3px solid var(--green)}
+    .checkin-card .ch-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .ch-icon{width:38px;height:38px;border-radius:10px;background:var(--green-soft);border:1px solid rgba(74,222,128,.2);display:grid;place-items:center;font-size:15px;color:var(--green)}
+    .ch-title{font-weight:700;font-size:15px}
+    .ch-sub{font-size:12px;color:var(--text-2)}
+    .ch-desc{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:16px}
+    .otp-wrap{display:flex;gap:10px}
+    .otp-input{flex:1;background:var(--bg);border:2px solid var(--border2);border-radius:13px;padding:13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;text-align:center;letter-spacing:8px;transition:all .2s}
+    .otp-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(255,82,0,.12)}
+    .otp-input::placeholder{font-size:14px;letter-spacing:0;font-weight:400;color:var(--text-3);font-family:'Plus Jakarta Sans',sans-serif}
+    .btn-enter{padding:13px 20px;border-radius:13px;font-weight:800;font-size:14px;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;box-shadow:0 4px 14px rgba(255,82,0,.3);white-space:nowrap}
+    .btn-enter:hover{transform:translateY(-1px)}
+    .otp-hint{font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.5;display:flex;align-items:flex-start;gap:5px}
+
+    /* ON DUTY BANNER */
+    .duty-banner{background:linear-gradient(135deg,#0d2018,#152e20);border:1px solid rgba(74,222,128,.2);border-radius:var(--r-2xl);padding:20px 24px;display:flex;align-items:center;gap:16px;margin-bottom:24px}
+    .duty-icon{width:48px;height:48px;border-radius:14px;background:var(--green-soft);border:1px solid rgba(74,222,128,.22);display:grid;place-items:center;font-size:20px;color:var(--green);flex-shrink:0}
+    .duty-banner h3{font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;color:var(--green);margin-bottom:2px}
+    .duty-banner p{font-size:13px;color:rgba(255,255,255,.4)}
+    .btn-end-shift{padding:9px 18px;border-radius:50px;font-size:12px;font-weight:800;background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.3);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;white-space:nowrap}
+    .btn-end-shift:hover{background:var(--red);color:#fff}
+    .active-warn{font-size:12px;color:var(--amber);font-weight:600;text-align:right;max-width:130px;line-height:1.4}
+
+    /* JOB CARD */
+    .job-card{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--brand);border-radius:var(--r-xl);padding:20px;margin-bottom:14px}
+    .job-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+    .job-student{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px}
+    .job-cluster{font-size:12px;color:var(--text-2);margin-top:3px;display:flex;align-items:center;gap:5px}
+    .in-transit-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;background:var(--brand-soft);color:var(--brand);border:1px solid rgba(255,82,0,.25)}
+    .blink{animation:pulseDot 1.2s infinite}
+    #map{height:250px;width:100%;border-radius:var(--r);margin:12px 0}
+    .verify-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;display:block}
+    .verify-input{flex:1;background:var(--surface2);border:1.5px solid var(--border2);border-radius:12px;padding:11px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;text-align:center;letter-spacing:5px;transition:all .2s}
+    .verify-input:focus{outline:none;border-color:var(--green)}
+    .verify-input::placeholder{font-size:12px;letter-spacing:0;font-weight:400;color:var(--text-3)}
+    .btn-verify{padding:11px 18px;border-radius:12px;font-weight:800;font-size:13px;background:var(--green);color:#000;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;white-space:nowrap}
+    .btn-verify:hover{background:#6ee89b}
+
+    /* AVAILABLE JOBS */
+    .avail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;transition:all .2s}
+    .avail-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .avail-left{display:flex;align-items:center;gap:13px}
+    .avail-icon{width:40px;height:40px;border-radius:11px;background:var(--blue-soft);border:1px solid rgba(96,165,250,.18);display:grid;place-items:center;color:var(--blue);font-size:15px;flex-shrink:0}
+    .avail-id{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px}
+    .avail-cluster{font-size:12px;color:var(--text-2);margin-top:2px}
+    .btn-accept{padding:9px 18px;border-radius:50px;font-size:13px;font-weight:800;background:linear-gradient(135deg,var(--brand),var(--brand-l));color:#fff;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;box-shadow:0 3px 10px rgba(255,82,0,.3);white-space:nowrap}
+    .btn-accept:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(255,82,0,.4)}
+
+    /* CANCEL BTN */
+    .btn-cancel-sm{background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s}
+    .btn-cancel-sm:hover{background:var(--red);color:#fff}
+
+    /* EMPTY STATE */
+    .empty{text-align:center;padding:48px 20px;color:var(--text-3)}
+    .empty i{font-size:40px;display:block;margin-bottom:12px;opacity:.12}
+    .empty p{font-size:14px;color:var(--text-2)}
+
+    /* ORDER COUNT BADGE */
+    .orders-badge{font-size:12px;font-weight:800;color:var(--brand);background:var(--brand-soft);border:1px solid rgba(255,82,0,.2);padding:3px 10px;border-radius:20px}
+
+    @media(max-width:900px){.offduty-grid,.onduty-grid{grid-template-columns:1fr}.page{padding:18px 16px}}
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <a class="brand" href="#">
+    <span class="brand-logo">🏍️</span>
+    SmartTiffin<span class="brand-dot">.</span>
+    <span class="brand-sub">Partner</span>
+  </a>
+  <div class="topbar-right">
+    <div class="earn-pill">
+      <i class="fas fa-wallet" style="font-size:11px"></i>
+      ₹<span th:text="${#numbers.formatDecimal(driver.walletBalance,0,0)}">0</span>
+    </div>
+    <div class="duty-pill">
+      <span th:if="${isOnDuty}" class="duty-dot-on"></span>
+      <span th:unless="${isOnDuty}" class="duty-dot-off"></span>
+      <span th:text="${isOnDuty ? 'On Duty' : 'Off Duty'}">Off Duty</span>
+    </div>
+    <form th:if="${driver.online}" th:action="@{/delivery/go-offline}" method="post" style="margin:0">
+      <button class="btn-toggle btn-go-offline" type="submit"><i class="fas fa-toggle-on" style="font-size:13px"></i> Go Offline</button>
+    </form>
+    <form th:unless="${driver.online}" th:action="@{/delivery/go-online}" method="post" style="margin:0">
+      <button class="btn-toggle btn-go-online" type="submit"><i class="fas fa-toggle-off" style="font-size:13px"></i> Go Online</button>
+    </form>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ALERTS -->
+  <div th:if="${param.msg}" class="alert alert-s">
+    <i class="fas fa-check-circle"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'SlotBooked'">Shift booked! Check in at the hub when you arrive.</span>
+      <span th:case="'OnDuty'">Checked in — your delivery queue is now live!</span>
+      <span th:case="'JobAccepted'">Job accepted. Head to the hub for pickup.</span>
+      <span th:case="'PaymentCredited'">Delivery confirmed! Payment credited to your wallet.</span>
+      <span th:case="'NowOnline'">You're online! Book a slot to start taking deliveries.</span>
+      <span th:case="'NowOffline'">You're offline. Come back when you're ready to deliver.</span>
+      <span th:case="'SlotCancelled'">Shift cancelled. You can now book a different slot.</span>
+      <span th:case="'ShiftEnded'">Shift ended. Book a new slot whenever you're ready.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+  <div th:if="${param.error}" class="alert alert-d">
+    <i class="fas fa-times-circle"></i>
+    <span th:switch="${param.error[0]}">
+      <span th:case="'BreakfastShiftEnded'">Breakfast slot booking has closed for today.</span>
+      <span th:case="'LunchShiftEnded'">Lunch slot booking has closed for today.</span>
+      <span th:case="'DinnerShiftEnded'">Dinner slot booking has closed for today.</span>
+      <span th:case="'SlotFull'">This slot is full (max 5 drivers). Try another slot.</span>
+      <span th:case="'AlreadyBooked'">You've already booked this slot for today.</span>
+      <span th:case="'MustBeOnline'">Go online first before booking a slot.</span>
+      <span th:case="'InvalidBooking'">That booking doesn't exist or doesn't belong to you.</span>
+      <span th:case="'CannotCancelCheckedIn'">You've already checked in — this shift cannot be cancelled.</span>
+      <span th:case="'CompleteDeliveryFirst'">You have an active delivery in progress. Complete it before ending your shift.</span>
+      <span th:case="'InvalidEntryOTP'">OTP not recognised. Ask the admin for your code.</span>
+      <span th:case="'NotOnDuty'">You must be checked in before accepting jobs.</span>
+      <span th:case="'OrderNotAvailable'">This order is no longer available.</span>
+      <span th:case="'InvalidOTP'">OTP doesn't match. Ask the student to check again.</span>
+      <span th:case="'NotYourOrder'">This delivery is not assigned to you.</span>
+      <span th:case="*" th:text="${param.error[0]}">Something went wrong.</span>
+    </span>
+  </div>
+
+  <!-- ══ OFF DUTY ══ -->
+  <div th:if="${!isOnDuty}">
+
+    <div class="offduty-hero">
+      <div class="oh-inner">
+        <h2>Start Your Shift 🏍️</h2>
+        <p>Book a slot, then check in at the hub to go live and start earning.</p>
+      </div>
+    </div>
+
+    <div class="offduty-grid">
+
+      <!-- Book Slot -->
+      <div>
+        <div class="sec-lbl">Step 1 — Reserve a slot</div>
+        <div class="card">
+          <!-- Offline banner -->
+          <div th:if="${!driver.online}" class="offline-banner">
+            <i class="fas fa-power-off" style="color:var(--amber);font-size:16px;flex-shrink:0"></i>
+            <div class="ob-txt">
+              <h4>You're offline</h4>
+              <p>Go online first to book a delivery slot.</p>
+            </div>
+            <form th:action="@{/delivery/go-online}" method="post" style="margin:0 0 0 auto">
+              <button class="btn-toggle btn-go-online" type="submit" style="padding:7px 13px;font-size:12px"><i class="fas fa-toggle-off"></i> Go Online</button>
+            </form>
+          </div>
+
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;line-height:1.6">Slots must be booked before they start. Max 5 drivers per slot.</p>
+
+          <form th:action="@{/delivery/book-slot}" method="post" class="slot-form">
+            <button type="submit" name="slotType" value="BREAKFAST" class="slot-btn" th:disabled="${!canBookBreakfast || !driver.online}">
+              <div class="slot-ico si-b"><i class="fas fa-coffee"></i></div>
+              <div class="slot-info"><span class="slot-name">Breakfast</span><span class="slot-time">8:00 AM – 10:00 AM</span></div>
+              <span th:if="${!canBookBreakfast}" class="ended-tag">Ended</span>
+              <span th:if="${canBookBreakfast && !driver.online}" class="offline-tag">Offline</span>
+              <i th:if="${canBookBreakfast && driver.online}" class="fas fa-chevron-right" style="color:var(--text-3)"></i>
+            </button>
+            <button type="submit" name="slotType" value="LUNCH" class="slot-btn" th:disabled="${!canBookLunch || !driver.online}">
+              <div class="slot-ico si-l"><i class="fas fa-sun"></i></div>
+              <div class="slot-info"><span class="slot-name">Lunch</span><span class="slot-time">12:00 PM – 2:00 PM</span></div>
+              <span th:if="${!canBookLunch}" class="ended-tag">Ended</span>
+              <span th:if="${canBookLunch && !driver.online}" class="offline-tag">Offline</span>
+              <i th:if="${canBookLunch && driver.online}" class="fas fa-chevron-right" style="color:var(--text-3)"></i>
+            </button>
+            <button type="submit" name="slotType" value="DINNER" class="slot-btn" th:disabled="${!canBookDinner || !driver.online}">
+              <div class="slot-ico si-d"><i class="fas fa-moon"></i></div>
+              <div class="slot-info"><span class="slot-name">Dinner</span><span class="slot-time">7:00 PM – 9:00 PM</span></div>
+              <span th:if="${!canBookDinner}" class="ended-tag">Ended</span>
+              <span th:if="${canBookDinner && !driver.online}" class="offline-tag">Offline</span>
+              <i th:if="${canBookDinner && driver.online}" class="fas fa-chevron-right" style="color:var(--text-3)"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- My booked shifts -->
+        <div class="card" th:if="${myBookings != null && !#lists.isEmpty(myBookings)}">
+          <div class="card-title"><span class="card-title-icon"><i class="fas fa-list-check"></i></span> My Upcoming Bookings</div>
+          <table class="b-table">
+            <thead><tr><th>Date</th><th>Slot</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr th:each="b : ${myBookings}">
+                <td style="color:var(--text-2);font-size:12px" th:text="${b.shiftDate}">—</td>
+                <td><span class="chip chip-slot" th:text="${b.slot}">LUNCH</span></td>
+                <td>
+                  <span class="chip chip-checked" th:if="${b.checkedIn}"><i class="fas fa-circle" style="font-size:6px"></i> On Duty</span>
+                  <span class="chip chip-pending" th:unless="${b.checkedIn}"><i class="fas fa-circle" style="font-size:6px"></i> Pending</span>
+                </td>
+                <td>
+                  <form th:unless="${b.checkedIn}" th:action="@{'/delivery/cancel-slot/' + ${b.id}}" method="post" style="margin:0" onsubmit="return confirm('Cancel this shift?')">
+                    <button type="submit" class="btn-cancel-sm"><i class="fas fa-times"></i> Cancel</button>
+                  </form>
+                  <span th:if="${b.checkedIn}" style="font-size:11px;color:var(--text-3)">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Hub Check-In -->
+      <div>
+        <div class="sec-lbl">Step 2 — Check in at the hub</div>
+        <div class="checkin-card">
+          <div class="ch-head">
+            <div class="ch-icon"><i class="fas fa-door-open"></i></div>
+            <div>
+              <div class="ch-title">Hub Entry</div>
+              <div class="ch-sub">Unlock your delivery queue</div>
+            </div>
+          </div>
+          <p class="ch-desc">Get your 4-digit OTP from the hub admin to check in and go live.</p>
+          <form th:action="@{/delivery/hub-checkin}" method="post">
+            <div class="otp-wrap">
+              <input type="text" name="otp" class="otp-input" placeholder="••••" maxlength="4" autocomplete="off" required>
+              <button type="submit" class="btn-enter"><i class="fas fa-check"></i> Enter</button>
+            </div>
+            <div class="otp-hint"><i class="fas fa-info-circle"></i> Ask the hub admin for your 4-digit entry OTP when you arrive.</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ON DUTY ══ -->
+  <div th:if="${isOnDuty}">
+
+    <!-- Status Banner -->
+    <div class="duty-banner">
+      <div class="duty-icon"><i class="fas fa-motorcycle"></i></div>
+      <div style="flex:1">
+        <h3>You're On Duty 🟢 <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.35);margin-left:8px">Slot: <span th:text="${activeSlot}">LUNCH</span></span></h3>
+        <p>Your delivery queue is live. Accept jobs and earn!</p>
+      </div>
+      <form th:if="${#lists.isEmpty(myDeliveries)}" th:action="@{/delivery/end-shift}" method="post" style="margin:0" onsubmit="return confirm('End your shift?')">
+        <button type="submit" class="btn-end-shift"><i class="fas fa-stop-circle"></i> End Shift</button>
+      </form>
+      <div th:unless="${#lists.isEmpty(myDeliveries)}" class="active-warn">
+        <i class="fas fa-exclamation-triangle"></i> Complete active delivery first
+      </div>
+    </div>
+
+    <div class="onduty-grid">
+
+      <!-- Active Deliveries -->
+      <div>
+        <div class="sec-lbl">Active Deliveries</div>
+        <div id="map" style="display:none;margin-bottom:14px"></div>
+
+        <div th:if="${#lists.isEmpty(myDeliveries)}" class="card">
+          <div class="empty"><i class="fas fa-motorcycle"></i><p>No active deliveries — accept a job from the queue →</p></div>
+        </div>
+
+        <div th:each="job : ${myDeliveries}" class="job-card">
+          <div class="job-header">
+            <div>
+              <div class="job-student" th:text="${job.student.fullName}">Student Name</div>
+              <div class="job-cluster"><i class="fas fa-building" style="font-size:10px"></i><span th:text="${job.hostelCluster}">Block A</span></div>
+            </div>
+            <span class="in-transit-chip"><i class="fas fa-circle blink" style="font-size:7px"></i> In Transit</span>
+          </div>
+          <div>
+            <span class="verify-lbl">Delivery Verification — ask student for their OTP</span>
+            <form th:action="@{/delivery/verify-otp}" method="post" style="display:flex;gap:9px">
+              <input type="hidden" name="orderId" th:value="${job.id}">
+              <input type="text" name="otp" class="verify-input" placeholder="Student OTP" maxlength="4" required autocomplete="off">
+              <button type="submit" class="btn-verify"><i class="fas fa-check"></i> Verify</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Jobs Queue -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="sec-lbl" style="margin-bottom:0">Ready for Pickup</div>
+          <span th:if="${!#lists.isEmpty(availableOrders)}" class="orders-badge" th:text="${#lists.size(availableOrders)} + ' orders'">0</span>
+        </div>
+
+        <div th:each="order : ${availableOrders}" class="avail-card">
+          <div class="avail-left">
+            <div class="avail-icon"><i class="fas fa-box"></i></div>
+            <div>
+              <div class="avail-id">Order #<span th:text="${order.id}">101</span></div>
+              <div class="avail-cluster">
+                <i class="fas fa-map-pin" style="font-size:10px"></i>
+                <span th:text="${order.hostelCluster}">Block A</span>
+                <span th:if="${order.mealCategory != null}" style="margin-left:6px;font-size:11px;font-weight:800" th:text="${order.mealCategory}">Pure Veg</span>
+              </div>
+            </div>
+          </div>
+          <form th:action="@{'/delivery/accept/' + ${order.id}}" method="post" style="margin:0">
+            <button type="submit" class="btn-accept"><i class="fas fa-check" style="font-size:12px"></i> Accept</button>
+          </form>
+        </div>
+
+        <div th:if="${#lists.isEmpty(availableOrders)}" class="card">
+          <div class="empty"><i class="fas fa-check-circle"></i><p>All orders are picked up. Well done!</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  if(window.history.replaceState){const url=new URL(window.location.href);if(url.searchParams.has('msg')||url.searchParams.has('error')){setTimeout(()=>{url.searchParams.delete('msg');url.searchParams.delete('error');window.history.replaceState({},'',url.href)},100)}}
+  document.querySelectorAll('.otp-input,.verify-input').forEach(i=>{i.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'');if(e.target.value.length===4)e.target.closest('form').submit()})});
+</script>
+<script th:if="${isOnDuty && !#lists.isEmpty(myDeliveries)}" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:if="${isOnDuty && !#lists.isEmpty(myDeliveries)}">
+  var mapEl=document.getElementById('map');
+  if(mapEl){mapEl.style.display='block';var map=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+  var dI=L.divIcon({className:'',html:'<div style="background:#FF5200;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(255,82,0,.8)"></div>',iconSize:[14,14]});
+  var dD=L.divIcon({className:'',html:'<div style="background:#4ADE80;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(74,222,128,.6)"></div>',iconSize:[12,12]});
+  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){map.setView([p.coords.latitude,p.coords.longitude],15);L.marker([p.coords.latitude,p.coords.longitude],{icon:dI}).addTo(map).bindPopup('<b>You</b>').openPopup();L.marker([p.coords.latitude+0.005,p.coords.longitude+0.003],{icon:dD}).addTo(map).bindPopup('<b>Delivery Point</b>')},function(){map.setView([18.9894,73.1175],14);L.marker([18.9894,73.1175],{icon:dI}).addTo(map).bindPopup('<b>You</b>').openPopup()})}else{map.setView([18.9894,73.1175],14)}}
+</script>
+</body>
+</html>

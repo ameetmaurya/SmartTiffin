@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cooks — NutriDeliver Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --brand:    #FF5722;
+      --brand2:   #FF7043;
+      --dark:     #0B0C0B;
+      --dark2:    #111311;
+      --dark3:    #171A17;
+      --dark4:    #1D211D;
+      --dark5:    #232823;
+      --border:   rgba(255,255,255,0.065);
+      --border2:  rgba(255,255,255,0.11);
+      --text:     #EEF0ED;
+      --muted:    #7A8A7A;
+      --faint:    #3D4A3D;
+      --green:    #3DDC7C;
+      --red:      #FF5A5A;
+      --amber:    #F5A623;
+      --blue:     #4D9CFF;
+      --cyan:     #22D3EE;
+      --lime:     #C6F135;
+      --r:        13px;
+      --r-sm:     8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13.5px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 58px 1fr;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(rgba(255,87,34,.04) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      grid-column: 1 / -1;
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center;
+      padding: 0 20px; gap: 12px;
+      background: rgba(11,12,11,0.94);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; margin-right: 8px; }
+    .logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; font-size: 15px; color: #fff; flex-shrink: 0; }
+    .logo-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 900; color: var(--text); letter-spacing: -0.4px; }
+    .logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brand); display: block; line-height: 1; margin-top: 1px; }
+    .topbar-divider { width: 1px; height: 24px; background: var(--border2); }
+    .tb-btn { height: 30px; padding: 0 12px; border-radius: var(--r-sm); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border2); background: var(--dark3); color: var(--muted); text-decoration: none; cursor: pointer; transition: all .18s; white-space: nowrap; }
+    .tb-btn:hover { background: var(--dark4); color: var(--text); }
+    .tb-btn.warn { border-color: rgba(245,166,35,.3); color: var(--amber); }
+    .tb-btn.info { border-color: rgba(77,156,255,.3); color: var(--blue); }
+    .role-pill { height: 26px; padding: 0 11px; border-radius: 50px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
+    .rp-super  { background: rgba(255,90,90,.1); color: #FF8A65; border: 1px solid rgba(255,90,90,.25); }
+    .rp-hub    { background: rgba(77,156,255,.1); color: #82BAFF; border: 1px solid rgba(77,156,255,.25); }
+    .rp-viewer { background: rgba(122,138,122,.1); color: var(--muted); border: 1px solid var(--border2); }
+    .admin-name { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .logout-btn { height: 30px; padding: 0 12px; border-radius: var(--r-sm); background: none; border: 1px solid var(--border2); color: var(--faint); font-size: 12px; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 5px; }
+    .logout-btn:hover { border-color: var(--red); color: #FF8A65; }
+
+    /* ── SIDEBAR ── */
+    .sidenav { background: var(--dark2); border-right: 1px solid var(--border); padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1; overflow-y: auto; }
+    .nav-section { font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); padding: 0 8px; margin: 14px 0 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--r); text-decoration: none; font-size: 12.5px; font-weight: 600; color: var(--muted); transition: all .15s; }
+    .nav-item:hover { background: var(--dark3); color: var(--text); }
+    .nav-item.active { background: rgba(255,87,34,.1); color: var(--brand); }
+    .nav-item .ni { width: 16px; text-align: center; font-size: 13px; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; font-size: 9.5px; font-weight: 800; background: var(--brand); color: #fff; padding: 1px 6px; border-radius: 20px; }
+    .nav-badge.amber { background: var(--amber); color: #000; }
+    .sidenav-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+    .sidenav-foot .logout-btn { width: 100%; justify-content: flex-start; border-radius: var(--r); height: 36px; padding: 0 10px; }
+
+    /* ── MAIN & COMPONENTS ── */
+    .main { position: relative; z-index: 1; overflow-y: auto; padding: 28px 28px 60px; }
+    
+    .strip { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+    .strip-ok { background: rgba(61,220,124,.07); border: 1px solid rgba(61,220,124,.2); color: #6EEEA7; }
+    .strip-err { background: rgba(255,90,90,.07); border: 1px solid rgba(255,90,90,.2); color: #FF8A65; }
+
+    .sec-label { display: flex; align-items: center; gap: 8px; font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .sec-divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--dark2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 3px 0 0 3px; }
+    .sc-blue::before { background: var(--blue); }
+    .sc-red::before  { background: var(--red); }
+    .sc-amber::before { background: var(--amber); }
+    .sc-green::before { background: var(--green); }
+    .stat-lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+    .stat-num { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1px; }
+    .sc-blue  .stat-num { color: #82BAFF; }
+    .sc-red   .stat-num { color: #FF8A65; }
+    .sc-amber .stat-num { color: #FFC66D; }
+    .sc-green .stat-num { color: #6EEEA7; }
+
+    .split-md { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+    .card { background: var(--dark2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--dark3); border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+
+    .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .tbl thead tr { background: var(--dark3); }
+    .tbl thead th { padding: 9px 16px; font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--border); text-align: left; }
+    .tbl tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+    .tbl tbody tr:hover { background: var(--dark3); }
+    .tbl td { padding: 10px 16px; color: var(--muted); vertical-align: middle; }
+    .tbl td strong { color: var(--text); }
+    .tbl .empty td { text-align: center; padding: 32px; color: var(--faint); }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 5px; font-size: 10.5px; font-weight: 700; }
+    .bg-green { background: rgba(61,220,124,.1); color: var(--green); border: .5px solid rgba(61,220,124,.25); }
+    .bg-amber { background: rgba(245,166,35,.1); color: var(--amber); border: .5px solid rgba(245,166,35,.25); }
+    .bg-gray { background: rgba(61,74,61,.4); color: var(--muted); border: .5px solid var(--border2); }
+    .bg-outline { background: transparent; border: .5px solid var(--border2); color: var(--muted); }
+
+    .form-panel { background: var(--dark2); border: 1px solid rgba(255,90,90,.25); border-radius: 16px; overflow: hidden; }
+    .form-panel-head { padding: 13px 18px; background: rgba(255,90,90,.04); border-bottom: 1px solid rgba(255,90,90,.12); display: flex; align-items: center; justify-content: space-between; }
+    .form-panel-title { font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    .form-body { padding: 18px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .flbl { font-size: 9.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); }
+    .f-inp { width: 100%; background: var(--dark4); border: 1.5px solid var(--border2); border-radius: var(--r-sm); padding: 9px 12px; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; transition: border-color .18s; }
+    .f-inp:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,87,34,.1); }
+    .btn-brand { display: inline-flex; justify-content: center; width: 100%; padding: 10px 14px; border-radius: var(--r); font-size: 12px; font-weight: 700; cursor: pointer; border: none; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--brand); color: #fff; transition: opacity .15s; }
+    .btn-brand:hover { opacity: .88; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="/admin/dashboard">
+    <div class="logo-mark">🍱</div>
+    <div>
+      <span class="logo-name">NutriDeliver</span>
+      <span class="logo-sub">Ops Control</span>
+    </div>
+  </a>
+  <div class="topbar-divider"></div>
+  <a href="/admin/verifications" class="tb-btn warn" th:if="${isSuperAdmin}"><i class="fas fa-id-card"></i> Verifications</a>
+  <a href="/admin/team" class="tb-btn info" th:if="${isSuperAdmin}"><i class="fas fa-users-cog"></i> Team</a>
+
+  <div class="topbar-right">
+    <span th:if="${adminRole == 'SUPER_ADMIN'}" class="role-pill rp-super"><i class="fas fa-crown"></i> Super Admin</span>
+    <span th:if="${adminRole == 'HUB_MANAGER'}" class="role-pill rp-hub"><i class="fas fa-building"></i> Hub Manager</span>
+    <span th:if="${adminRole == 'VIEWER'}" class="role-pill rp-viewer"><i class="fas fa-eye"></i> Viewer</span>
+    <span class="admin-name" th:text="${adminUser != null ? adminUser.fullName : 'Admin'}">Admin</span>
+    <form th:action="@{/logout}" method="post">
+      <button class="logout-btn" type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </form>
+  </div>
+</header>
+
+<nav class="sidenav">
+  <div class="nav-section">Overview</div>
+  <a href="/admin/dashboard" class="nav-item"><i class="ni fas fa-gauge-high"></i> Dashboard</a>
+
+  <div class="nav-section">Operations</div>
+  <a href="/admin/verifications" class="nav-item">
+    <i class="ni fas fa-id-card"></i> Verifications
+    <span class="nav-badge amber" th:text="${pendingVerifications != null ? pendingVerifications : 0}">0</span>
+  </a>
+  <a href="/admin/hubs" class="nav-item"><i class="ni fas fa-building"></i> Hubs</a>
+  <a href="/admin/plans" class="nav-item"><i class="ni fas fa-calendar-week"></i> Meal Plans</a>
+  <a href="/admin/orders" class="nav-item"><i class="ni fas fa-receipt"></i> Orders</a>
+
+  <div class="nav-section">People</div>
+  <a href="/admin/students" class="nav-item"><i class="ni fas fa-user-graduate"></i> Students</a>
+  <a href="/admin/cooks" class="nav-item active"><i class="ni fas fa-fire-burner"></i> Cooks</a>
+  <a href="/admin/riders" class="nav-item"><i class="ni fas fa-motorcycle"></i> Riders</a>
+
+  <div class="nav-section">Admin</div>
+  <a href="/admin/team" class="nav-item"><i class="ni fas fa-users-cog"></i> Team</a>
+
+  <div class="sidenav-foot">
+    <form th:action="@{/logout}" method="post">
+      <button class="logout-btn" type="submit"><i class="fas fa-power-off" style="width:16px;text-align:center"></i> Logout</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+    
+    <div th:if="${param.msg}" class="strip strip-ok">
+        <i class="fas fa-check-circle"></i> <span th:text="${param.msg[0]}">Action successful.</span>
+    </div>
+    <div th:if="${param.error}" class="strip strip-err">
+        <i class="fas fa-exclamation-circle"></i> <span th:text="${param.error[0]}">Error occurred.</span>
+    </div>
+
+    <div class="sec-label"><i class="fas fa-fire-burner"></i> Kitchen Staff</div>
+    <div class="stat-grid">
+        <div class="stat-card sc-red">
+            <div class="stat-lbl">Total Cooks</div>
+            <div class="stat-num" th:text="${totalCooks}">0</div>
+        </div>
+        <div class="stat-card sc-green">
+            <div class="stat-lbl">Approved</div>
+            <div class="stat-num" th:text="${approvedCooks}">0</div>
+        </div>
+        <div class="stat-card sc-amber">
+            <div class="stat-lbl">Pending Review</div>
+            <div class="stat-num" th:text="${pendingCooks}">0</div>
+        </div>
+        <div class="stat-card sc-blue">
+            <div class="stat-lbl">On Duty Today</div>
+            <div class="stat-num">--</div> 
+        </div>
+    </div>
+
+    <div class="sec-divider"></div>
+
+    <div class="split-md">
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title"><i class="fas fa-users" style="color:var(--brand)"></i> All Cooks</div>
+                <span class="badge bg-outline" th:text="${totalCooks + ' cooks'}"></span>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="tbl">
+                    <thead><tr>
+                        <th>Cook Name</th>
+                        <th>Mobile</th>
+                        <th>Verification</th>
+                        <th>Joined</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr th:each="cook : ${cooks}">
+                            <td>
+                                <strong th:text="${cook.fullName}">Name</strong>
+                                <div style="font-size:11px;color:var(--faint)" th:text="${cook.email}">email</div>
+                            </td>
+                            <td th:text="${cook.mobileNumber != null ? cook.mobileNumber : '—'}">Mobile</td>
+                            <td>
+                                <span th:if="${cook.verificationStatus != null and cook.verificationStatus.name() == 'APPROVED'}" class="badge bg-green">Approved</span>
+                                <span th:if="${cook.verificationStatus != null and cook.verificationStatus.name() == 'PENDING'}" class="badge bg-amber">Pending</span>
+                                <span th:if="${cook.verificationStatus == null or cook.verificationStatus.name() == 'NOT_SUBMITTED'}" class="badge bg-gray">Incomplete</span>
+                            </td>
+                            <td th:text="${cook.createdAt != null ? #temporals.format(cook.createdAt, 'dd MMM yyyy') : '—'}">Date</td>
+                        </tr>
+                        <tr th:if="${cooks == null or #lists.isEmpty(cooks)}" class="empty">
+                            <td colspan="4">No cooks registered yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-panel" th:if="${isSuperAdmin}">
+            <div class="form-panel-head">
+                <div class="form-panel-title" style="color:var(--red)"><i class="fas fa-user-plus"></i> Register Cook</div>
+            </div>
+            <div class="form-body">
+                <form th:action="@{/admin/cooks/create}" method="post">
+                    <div class="field"><label class="flbl">Full Name</label>
+                        <input type="text" name="fullName" class="f-inp" required>
+                    </div>
+                    <div class="field"><label class="flbl">Email Address</label>
+                        <input type="email" name="email" class="f-inp" required>
+                    </div>
+                    <div class="field"><label class="flbl">Mobile Number</label>
+                        <input type="text" name="mobileNumber" class="f-inp" required>
+                    </div>
+                    <div class="field"><label class="flbl">Temporary Password</label>
+                        <input type="password" name="password" class="f-inp" required>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <button type="submit" class="btn-brand">Create Cook Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg') || url.searchParams.has('error')) {
+      url.searchParams.delete('msg'); url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.href);
+    }
+  }
+</script>
+</body>
+</html>

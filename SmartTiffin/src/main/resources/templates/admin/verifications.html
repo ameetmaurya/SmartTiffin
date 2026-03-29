@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Verifications | Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .doc-thumb{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #dee2e6;cursor:pointer;transition:transform .15s}
+    .doc-thumb:hover{transform:scale(1.05)}
+    .selfie-thumb{width:60px;height:60px;object-fit:cover;border-radius:50%;border:2px solid #dee2e6;cursor:pointer}
+    .status-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+    .modal-img{width:100%;border-radius:10px}
+    .reason-input{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #dee2e6;width:100%;margin-bottom:6px}
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark py-3 sticky-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand fw-bold" href="/admin/dashboard">
+      <i class="fas fa-shield-alt me-2 text-warning"></i> ADMIN — VERIFICATIONS
+    </a>
+    <div class="d-flex align-items-center gap-3">
+      <a href="/admin/dashboard" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left me-1"></i> Dashboard</a>
+      <form th:action="@{/logout}" method="post"><button class="btn btn-outline-light btn-sm">Log Out</button></form>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Alerts -->
+  <div th:if="${param.msg}" class="alert alert-success border-0 shadow-sm rounded-3 mb-4">
+    <i class="fas fa-check-circle me-2"></i>
+    <span th:switch="${param.msg[0]}">
+      <span th:case="'Approved'">User approved and activated successfully.</span>
+      <span th:case="'Rejected'">User rejected. They have been notified.</span>
+      <span th:case="*" th:text="${param.msg[0]}">Done.</span>
+    </span>
+  </div>
+
+  <!-- SUMMARY STATS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-5 border-warning p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Pending Review</div>
+            <h2 class="fw-bold mb-0 text-warning" th:text="${#lists.size(pendingUsers)}">0</h2>
+          </div>
+          <i class="fas fa-clock fs-1 text-warning opacity-25"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-5 border-success p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Approved</div>
+            <h2 class="fw-bold mb-0 text-success" th:text="${#lists.size(approvedUsers)}">0</h2>
+          </div>
+          <i class="fas fa-check-circle fs-1 text-success opacity-25"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-5 border-danger p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Rejected / Not Submitted</div>
+            <h2 class="fw-bold mb-0 text-danger" th:text="${#lists.size(rejectedUsers)}">0</h2>
+          </div>
+          <i class="fas fa-times-circle fs-1 text-danger opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENDING -->
+  <h5 class="fw-bold mb-3 text-muted"><i class="fas fa-hourglass-half me-2 text-warning"></i>Pending Review</h5>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th class="ps-4">Person</th>
+            <th>Role</th>
+            <th>Mobile</th>
+            <th>ID Proof</th>
+            <th>Selfie</th>
+            <th>Submitted</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="u : ${pendingUsers}">
+            <td class="ps-4">
+              <strong class="d-block" th:text="${u.fullName}">Name</strong>
+              <small class="text-muted" th:text="${u.email}">email</small>
+            </td>
+            <td>
+              <span th:if="${u.role.name() == 'COOK'}" class="badge bg-danger"><i class="fas fa-fire me-1"></i>Cook</span>
+              <span th:if="${u.role.name() == 'DELIVERY_PARTNER'}" class="badge bg-warning text-dark"><i class="fas fa-motorcycle me-1"></i>Driver</span>
+            </td>
+            <td>
+              <span th:text="${u.mobileNumber}">—</span>
+              <span th:if="${docMap[u.id] != null and docMap[u.id].mobileVerified}"
+                    class="badge bg-success ms-1" style="font-size:10px"><i class="fas fa-check"></i> OTP</span>
+              <span th:unless="${docMap[u.id] != null and docMap[u.id].mobileVerified}"
+                    class="badge bg-secondary ms-1" style="font-size:10px">Unverified</span>
+            </td>
+            <td>
+              <div th:if="${docMap[u.id] != null and docMap[u.id].idProofUrl != null}">
+                <img th:src="${docMap[u.id].idProofUrl}" class="doc-thumb doc-preview"
+                     th:data-url="${docMap[u.id].idProofUrl}"
+                     th:data-title="${docMap[u.id].idProofType}"
+                     alt="ID">
+                <div class="text-muted" style="font-size:10px;margin-top:3px" th:text="${docMap[u.id].idProofType}">type</div>
+              </div>
+              <span th:unless="${docMap[u.id] != null and docMap[u.id].idProofUrl != null}" class="text-muted small">Not uploaded</span>
+            </td>
+            <td>
+              <img th:if="${docMap[u.id] != null and docMap[u.id].selfieUrl != null}"
+                   th:src="${docMap[u.id].selfieUrl}" class="selfie-thumb doc-preview"
+                   th:data-url="${docMap[u.id].selfieUrl}"
+                   data-title="Selfie"
+                   alt="Selfie">
+              <span th:unless="${docMap[u.id] != null and docMap[u.id].selfieUrl != null}" class="text-muted small">Not uploaded</span>
+            </td>
+            <td>
+              <small class="text-muted"
+                     th:text="${docMap[u.id] != null and docMap[u.id].submittedAt != null ? #temporals.format(docMap[u.id].submittedAt, 'dd MMM, HH:mm') : '—'}">—</small>
+            </td>
+            <td class="text-center">
+              <div class="d-flex flex-column gap-1 align-items-center">
+                <form th:action="@{'/admin/verifications/approve/' + ${u.id}}" method="post">
+                  <button type="submit" class="btn btn-sm btn-success fw-bold px-3"
+                          onclick="return confirm('Approve this person?')">
+                    <i class="fas fa-check me-1"></i> Approve
+                  </button>
+                </form>
+                <button type="button" class="btn btn-sm btn-outline-danger fw-bold px-3 reject-btn"
+                        th:data-userid="${u.id}">
+                  <i class="fas fa-times me-1"></i> Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(pendingUsers)}">
+            <td colspan="7" class="text-center py-4 text-muted">
+              <i class="fas fa-check-circle me-2 text-success"></i>No pending verifications.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- APPROVED -->
+  <h5 class="fw-bold mb-3 text-muted"><i class="fas fa-check-circle me-2 text-success"></i>Approved</h5>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="bg-light">
+          <tr><th class="ps-4">Person</th><th>Role</th><th>Mobile</th><th>Approved On</th><th class="text-center">Action</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="u : ${approvedUsers}">
+            <td class="ps-4">
+              <strong class="d-block" th:text="${u.fullName}">Name</strong>
+              <small class="text-muted" th:text="${u.email}">email</small>
+            </td>
+            <td>
+              <span th:if="${u.role.name() == 'COOK'}" class="badge bg-danger"><i class="fas fa-fire me-1"></i>Cook</span>
+              <span th:if="${u.role.name() == 'DELIVERY_PARTNER'}" class="badge bg-warning text-dark"><i class="fas fa-motorcycle me-1"></i>Driver</span>
+            </td>
+            <td th:text="${u.mobileNumber}">—</td>
+            <td>
+              <small class="text-muted"
+                     th:text="${docMap[u.id] != null and docMap[u.id].reviewedAt != null ? #temporals.format(docMap[u.id].reviewedAt, 'dd MMM yyyy') : '—'}">—</small>
+            </td>
+            <td class="text-center">
+              <form th:action="@{'/admin/verifications/reject/' + ${u.id}}" method="post"
+                    onsubmit="return confirm('Revoke approval for this person?')">
+                <input type="hidden" name="reason" value="Approval revoked by admin.">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="fas fa-ban me-1"></i> Revoke
+                </button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(approvedUsers)}">
+            <td colspan="5" class="text-center py-4 text-muted">No approved users yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REJECTED / NOT SUBMITTED -->
+  <h5 class="fw-bold mb-3 text-muted"><i class="fas fa-times-circle me-2 text-danger"></i>Rejected / Not Submitted</h5>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="bg-light">
+          <tr><th class="ps-4">Person</th><th>Role</th><th>Status</th><th>Rejection Reason</th><th class="text-center">Action</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="u : ${rejectedUsers}">
+            <td class="ps-4">
+              <strong class="d-block" th:text="${u.fullName}">Name</strong>
+              <small class="text-muted" th:text="${u.email}">email</small>
+            </td>
+            <td>
+              <span th:if="${u.role.name() == 'COOK'}" class="badge bg-danger"><i class="fas fa-fire me-1"></i>Cook</span>
+              <span th:if="${u.role.name() == 'DELIVERY_PARTNER'}" class="badge bg-warning text-dark"><i class="fas fa-motorcycle me-1"></i>Driver</span>
+            </td>
+            <td>
+              <span th:if="${u.verificationStatus.name() == 'REJECTED'}" class="badge bg-danger">Rejected</span>
+              <span th:if="${u.verificationStatus.name() == 'NOT_SUBMITTED'}" class="badge bg-secondary">Not Submitted</span>
+            </td>
+            <td>
+              <small class="text-danger"
+                     th:text="${docMap[u.id] != null and docMap[u.id].rejectionReason != null ? docMap[u.id].rejectionReason : '—'}">—</small>
+            </td>
+            <td class="text-center">
+              <form th:action="@{'/admin/verifications/approve/' + ${u.id}}" method="post">
+                <button type="submit" class="btn btn-sm btn-outline-success"
+                        onclick="return confirm('Manually approve this person?')">
+                  <i class="fas fa-check me-1"></i> Approve Manually
+                </button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(rejectedUsers)}">
+            <td colspan="5" class="text-center py-4 text-muted">No rejected users.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Document Preview Modal -->
+<div class="modal fade" id="docModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h6 class="modal-title fw-bold" id="docModalTitle">Document</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <img id="docModalImg" src="" class="modal-img" alt="Document">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject with Reason Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0">
+        <h6 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Verification</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="rejectForm" method="post">
+          <label class="small text-muted fw-bold d-block mb-2">REJECTION REASON (shown to user)</label>
+          <textarea name="reason" class="reason-input form-control mb-3" rows="3"
+                    placeholder="e.g. ID proof image is blurry. Please resubmit a clear photo."></textarea>
+          <button type="submit" class="btn btn-danger w-100 fw-bold">
+            <i class="fas fa-times me-2"></i>Confirm Rejection
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('click', function(e) {
+    const img = e.target.closest('.doc-preview');
+    if (img) {
+      document.getElementById('docModalImg').src = img.dataset.url;
+      document.getElementById('docModalTitle').innerText = img.dataset.title || 'Document';
+      new bootstrap.Modal(document.getElementById('docModal')).show();
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.reject-btn');
+    if (btn) {
+      const userId = btn.dataset.userid;
+      document.getElementById('rejectForm').action = '/admin/verifications/reject/' + userId;
+      new bootstrap.Modal(document.getElementById('rejectModal')).show();
+    }
+  });
+
+  if (window.history.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('msg')) {
+      url.searchParams.delete('msg');
+      window.history.replaceState({}, '', url.href);
+    }
+  }
+</script>
+</body>
+</html>

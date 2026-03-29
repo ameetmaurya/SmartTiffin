@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics & Reports | NutriDeliver</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .custom-navbar { background-color: #1e2124; }
+        .glass-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05); }
+        .kpi-card { border-left: 5px solid #dee2e6; transition: transform 0.2s ease; }
+        .kpi-card:hover { transform: translateY(-4px); }
+        .kpi-info { border-left-color: #0d6efd; }
+        .kpi-warning { border-left-color: #fd7e14; }
+        .kpi-success { border-left-color: #198754; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark custom-navbar py-3 sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold me-5" href="#">
+            <i class="fas fa-shield-alt me-2 text-warning"></i> ADMIN & DISPATCH CONTROL
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 px-3" href="/admin/dashboard"><i class="fas fa-home me-1"></i> Live Orders</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 px-3" href="/admin/inventory"><i class="fas fa-boxes me-1"></i> Inventory Manager</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active text-white fw-bold border-bottom border-primary border-2 px-3" href="/admin/reports"><i class="fas fa-chart-pie me-1"></i> Reports</a>
+                </li>
+            </ul>
+        </div>
+        <div class="d-flex align-items-center ms-auto">
+            <span class="text-white me-3 small"><i class="fas fa-user-circle me-1"></i> Logged in as Admin</span>
+            <form th:action="@{/logout}" method="post">
+                <button class="btn btn-outline-light btn-sm">Log Out</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+    <div class="row mb-4 d-flex justify-content-between align-items-end">
+        <div class="col-md-8">
+            <h3 class="fw-bold text-dark mb-1">Audit & Variance Analytics</h3>
+            <p class="text-muted mb-0">Track material waste and monitor the immutable receiving ledger.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary fw-bold rounded-pill shadow-sm px-4" onclick="exportTableToCSV('ledgerTable', 'Inventory_Ledger_Export.csv')">
+                <i class="fas fa-file-csv me-2"></i> Export Ledger
+            </button>
+        </div>
+    </div>
+
+    <!-- NULL-SAFE KPI CARDS -->
+    <div class="row mb-4 g-4">
+        <div class="col-md-4">
+            <div class="card glass-card kpi-card kpi-info p-4 h-100">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold mb-2 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem;">Total Invoices Received</h6>
+                        <!-- Safe Check Added Here -->
+                        <h2 class="fw-bold mb-0 text-dark" th:text="${logs != null ? #lists.size(logs) : 0}">0</h2>
+                    </div>
+                    <i class="fas fa-file-invoice fs-1 text-primary opacity-25"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card glass-card kpi-card kpi-warning p-4 h-100">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold mb-2 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem;">Reconciliation Logs</h6>
+                        <!-- Safe Check Added Here -->
+                        <h2 class="fw-bold mb-0 text-warning" th:text="${usages != null ? #lists.size(usages) : 0}">0</h2>
+                    </div>
+                    <i class="fas fa-clipboard-check fs-1 text-warning opacity-25"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card glass-card kpi-card kpi-success p-4 h-100">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold mb-2 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem;">System Health</h6>
+                        <h2 class="fw-bold mb-0 text-success">OPTIMAL</h2>
+                    </div>
+                    <i class="fas fa-shield-alt fs-1 text-success opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-trash-alt me-2 text-danger"></i> Material Waste Distribution</h5>
+                        <small class="text-muted">Aggregated waste quantities across all recorded shifts</small>
+                    </div>
+                </div>
+                <div class="card-body p-4" style="height: 380px;">
+                    <canvas id="wasteChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card glass-card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-lock me-2 text-muted"></i> Immutable Receiving Ledger</h5>
+                        <small class="text-muted">Read-only audit trail of all incoming goods</small>
+                    </div>
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text bg-light border-secondary text-muted"><i class="fas fa-search"></i></span>
+                        <input type="text" id="ledgerSearch" class="form-control border-start-0" placeholder="Search invoices or suppliers..." onkeyup="filterLedger()" autocomplete="off" aria-label="Search Ledger">
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0" id="ledgerTable">
+                        <thead class="bg-light sticky-top small text-muted text-uppercase">
+                        <tr>
+                            <th class="ps-4 py-3">Date & Time</th>
+                            <th>Invoice #</th>
+                            <th>Supplier</th>
+                            <th>Material Received</th>
+                            <th>Quantity</th>
+                            <th>Stock Before → After</th>
+                            <th>Storage Loc.</th>
+                            <th class="text-end pe-4">Received By</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Safe Iterator Check -->
+                        <tr th:each="log : ${logs != null ? logs : {}}">
+                            <td class="ps-4 text-muted small fw-bold" th:text="${#temporals.format(log.transactionTime, 'dd MMM yyyy, HH:mm')}">Date</td>
+                            <td class="fw-bold text-uppercase text-dark" th:text="${log.invoiceNumber}">INV</td>
+                            <td th:text="${log.supplier}" class="text-dark">Supplier</td>
+                            <td class="fw-bold text-primary" th:text="${log.material.name}">Material</td>
+                            <td>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                    + <span th:text="${log.quantityAdded}">0</span> <span th:text="${log.material.unit}">U</span>
+                                </span>
+                            </td>
+                            <td class="small">
+                                <span class="text-muted" th:text="${log.stockBefore}">0</span>
+                                <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                <strong class="text-dark" th:text="${log.stockAfter}">0</strong>
+                            </td>
+                            <td class="text-muted"><i class="fas fa-map-marker-alt me-1 opacity-50"></i> <span th:text="${log.storageLocation}">Loc</span></td>
+                            <td class="text-end pe-4 fst-italic text-muted" th:text="${log.receivedBy}">User</td>
+                        </tr>
+                        <!-- Safe Empty State Check -->
+                        <tr th:if="${logs == null or #lists.isEmpty(logs)}">
+                            <td colspan="8" class="text-center py-5 text-muted">No receiving transactions recorded yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const wasteDataMap = {};
+    /* Safe iterator for JS block */
+    /*[# th:each="usage : ${usages != null ? usages : {}}"]*/
+        var matName = /*[[${usage.material.name}]]*/ 'Unknown';
+        var wasteAmt = /*[[${usage.wasteAmount}]]*/ 0;
+        if (wasteAmt > 0) {
+            if (!wasteDataMap[matName]) { wasteDataMap[matName] = 0; }
+            wasteDataMap[matName] += parseFloat(wasteAmt);
+        }
+    /*[/]*/
+
+    const ctx = document.getElementById('wasteChart');
+    if (Object.keys(wasteDataMap).length > 0) {
+        Chart.defaults.color = '#6c757d';
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(wasteDataMap),
+                datasets: [{
+                    label: 'Total Waste (Units)',
+                    data: Object.values(wasteDataMap),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    hoverBackgroundColor: 'rgba(220, 53, 69, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(33, 37, 41, 0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#dee2e6', borderWidth: 1, padding: 12, cornerRadius: 8 }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' }, border: { display: false } },
+                    x: { grid: { display: false }, border: { color: 'rgba(0, 0, 0, 0.1)' } }
+                }
+            }
+        });
+    } else {
+        const parentDiv = ctx.parentElement;
+        parentDiv.innerHTML = `<div class="d-flex flex-column h-100 align-items-center justify-content-center text-muted"><i class="fas fa-leaf fs-1 mb-3 text-success opacity-50"></i><span class="fs-5">No waste recorded yet! Excellent.</span></div>`;
+    }
+
+    function filterLedger() {
+        let input = document.getElementById("ledgerSearch").value.toUpperCase();
+        let table = document.getElementById("ledgerTable");
+        let tr = table.getElementsByTagName("tr");
+        for (let i = 1; i < tr.length; i++) {
+            let rowText = tr[i].innerText.toUpperCase();
+            if (rowText.indexOf(input) > -1) { tr[i].style.display = ""; } else { tr[i].style.display = "none"; }
+        }
+    }
+
+    function exportTableToCSV(tableId, filename) {
+        const table = document.getElementById(tableId);
+        let csv = [];
+        const headers = Array.from(table.querySelectorAll("thead th")).map(th => `"${th.innerText.trim()}"`);
+        csv.push(headers.join(","));
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+            if(row.style.display !== "none" && !row.querySelector('td[colspan]')) {
+                const cols = Array.from(row.querySelectorAll("td")).map(td => { return `"${td.innerText.replace(/(\r\n|\n|\r)/gm, " ").trim()}"`; });
+                csv.push(cols.join(","));
+            }
+        });
+        const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+        const downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+</script>
+
+</body>
+</html>
